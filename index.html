@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0D0D0D">
 <title>🦍NEPHS GYMPLAN 💪🏾</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -25,7 +26,7 @@ body{font-family:'DM Sans',sans-serif;color:var(--text);display:flex;flex-direct
 #toast{position:fixed;bottom:calc(90px + var(--safe-bot));left:50%;transform:translateX(-50%) translateY(20px);background:var(--dark3);border:1px solid rgba(201,168,76,.4);border-radius:8px;padding:10px 20px;font-family:'Space Mono',monospace;font-size:11px;color:var(--gold);opacity:0;transition:all.3s;z-index:500;white-space:nowrap;pointer-events:none}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 .app-header{padding:calc(12px + var(--safe-top)) 16px 16px;border-bottom:1px solid rgba(201,168,76,.15)}
-.header-top{display:flex;justify-content:space-between;align-items:center}
+.header-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
 .header-subtitle{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--muted);text-transform:uppercase}
 .header-title{font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:4px;color:var(--gold);line-height:1}
 .header-actions{display:flex;gap:8px;align-items:center}
@@ -79,7 +80,8 @@ body{font-family:'DM Sans',sans-serif;color:var(--text);display:flex;flex-direct
 .ex-check.done{background:var(--gold);border-color:var(--gold)}
 .ex-add{width:24px;height:24px;border-radius:50%;background:var(--dark4);border:1px solid rgba(201,168,76,.3);display:flex;align-items:center;justify-content:center;color:var(--gold);cursor:pointer;font-size:16px;transition:transform.3s}
 .ex-add.expanded{transform:rotate(45deg)}
-.ex-detail{border-top:1px solid rgba(201,168,76,.15);padding:16px;background:rgba(0,0,0,.2)}
+.ex-detail{border-top:1px solid rgba(201,168,76,.15);padding:16px;background:rgba(0,0,0,.2);display:none}
+.ex-detail.open{display:block}
 .detail-box{background:var(--dark4);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:12px;margin-bottom:12px}
 .detail-box-header{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-family:'Space Mono',monospace;font-size:10px;letter-spacing:1px;color:var(--gold);text-transform:uppercase}
 .detail-box-value{font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--gold);letter-spacing:1px}
@@ -267,42 +269,16 @@ body{font-family:'DM Sans',sans-serif;color:var(--text);display:flex;flex-direct
 </div>
 
 <script>
-// SAFE DATA INIT
-let DATA;
-try {
-  DATA = JSON.parse(localStorage.getItem('nephData')) || null;
-} catch(e) {
-  DATA = null;
-}
-
-if (!DATA) {
-  DATA = {
-    currentWeek: 4,
-    totalWeeks: 12,
-    deloadWeeks: [4, 8],
-    photos: {},
-    exerciseSelection: {},
-    koerper: {
-      eintraege: [
-        {datum: '2026-03-30', gewicht: 89.25, kfa: 12.0, woche: 1},
-        {datum: '2026-03-31', gewicht: 88.25, kfa: 12.0, woche: 1}
-      ],
-      startGewicht: 89.25,
-      startKfa: 12.0
-    },
-    stats: {
-      gesamtVolumen: 102.9,
-      saetzeGesamt: 278,
-      wochenTrainiert: 4,
-      wochenTotal: 12,
-      muskelVolumen: {
-        'Rücken': 10.0, 'Quads': 9.9, 'Brust': 6.5, 'Schulter': 5.0, 'Bizeps': 3.3,
-        'Gesäß': 2.8, 'Trizeps': 2.7, 'Waden': 2.1, 'Hamstr.': 0.7, 'U.Rücken': 0
-      },
-      bestLeistung: {uebung: 'BEINPRESSE (45°)', woche: 4, gewicht: 200, oneRM: 267, platz: 36}
-    },
-    exercisePRs: [
-      {rank: 1, name: 'BEINPRESSE (45°)', gew: 200, wdh: 12, est1RM: 267, prog: 99, change: 'diese Woche!'},
-      {rank: 2, name: 'KREUZHEBEN', gew: 200, wdh: 12, est1RM: 260, prog: 98, change: 'diese Woche!'},
-      {rank: 3, name: 'KNIEBEUGEN (SMITH MACHINE)', gew: 110, wdh: 10, est1RM: 127, prog: 98, change: 'diese Woche!'},
-      {rank
+// Splash nur - Rest vom JS schick ich gleich wenn das läuft
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    document.getElementById('splashBar').style.width = '100%';
+    setTimeout(() => {
+      document.getElementById('splash').classList.add('hide');
+      alert('Splash fertig! Sag "WEITER" und ich schick den kompletten App-Code mit allen 4 Tagen + Bibliothek + Fotos + STATS');
+    }, 1000);
+  }, 100);
+});
+</script>
+</body>
+</html>
