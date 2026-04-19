@@ -4,14 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0D0D0D">
 <title>🦍NEPHS GYMPLAN 💪🏾</title>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{--gold:#C9A84C;--dark:#0D0D0D;--dark3:#1C1C1C;--dark4:#242424;--text:#E8E0D0;--muted:#7A7060;--red:#C94C4C;--green:#4CC97A;--blue:#4C8EC9;--purple:#9B6EC9;--orange:#C97A4C;--safe-top:env(safe-area-inset-top,0px);--safe-bot:env(safe-area-inset-bottom,0px)}
+:root{--gold:#C9A84C;--dark:#0D0D0D;--dark3:#1C1C1C;--dark4:#242424;--text:#E8E0D0;--muted:#7A7060;--green:#4CC97A;--orange:#C97A4C;--safe-top:env(safe-area-inset-top,0px);--safe-bot:env(safe-area-inset-bottom,0px)}
 html,body{height:100%;overflow:hidden;background:var(--dark)}
 body{font-family:'DM Sans',sans-serif;color:var(--text);display:flex;flex-direction:column}
 #splash{position:fixed;inset:0;background:var(--dark);z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;transition:opacity.5s}
@@ -26,7 +25,7 @@ body{font-family:'DM Sans',sans-serif;color:var(--text);display:flex;flex-direct
 #toast{position:fixed;bottom:calc(90px + var(--safe-bot));left:50%;transform:translateX(-50%) translateY(20px);background:var(--dark3);border:1px solid rgba(201,168,76,.4);border-radius:8px;padding:10px 20px;font-family:'Space Mono',monospace;font-size:11px;color:var(--gold);opacity:0;transition:all.3s;z-index:500;white-space:nowrap;pointer-events:none}
 #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 .app-header{padding:calc(12px + var(--safe-top)) 16px 16px;border-bottom:1px solid rgba(201,168,76,.15)}
-.header-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.header-top{display:flex;justify-content:space-between;align-items:center}
 .header-subtitle{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--muted);text-transform:uppercase}
 .header-title{font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:4px;color:var(--gold);line-height:1}
 .header-actions{display:flex;gap:8px;align-items:center}
@@ -159,22 +158,6 @@ body{font-family:'DM Sans',sans-serif;color:var(--text);display:flex;flex-direct
 .legend-line{display:flex;align-items:center;gap:6px}
 .legend-line-bar{width:20px;height:2px;background:var(--gold)}
 .legend-line-bar.dashed{background:repeating-linear-gradient(90deg,#9B6EC9 0,#9B6EC9 3px,transparent 3px,transparent 6px)}
-.heatmap-card{background:var(--dark3);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:16px;margin-bottom:16px}
-.heatmap-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
-.heatmap-title{display:flex;align-items:center;gap:8px;font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:2px;color:var(--gold)}
-.heatmap-sub{font-family:'Space Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px}
-.heatmap-badge{font-family:'Space Mono',monospace;font-size:9px;color:var(--red);letter-spacing:1px}
-.heatmap-container{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
-.radar-chart-wrap{background:var(--dark4);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:12px;position:relative}
-.bar-chart-wrap{background:var(--dark4);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:12px}
-.bar-chart-item{margin-bottom:8px}
-.bar-chart-label{display:flex;justify-content:space-between;font-family:'Space Mono',monospace;font-size:10px;margin-bottom:4px}
-.bar-chart-label-name{color:var(--text)}
-.bar-chart-label-value{color:var(--gold);font-weight:600}
-.bar-chart-bg{width:100%;height:6px;background:rgba(255,255,255,.05);border-radius:3px;overflow:hidden}
-.bar-chart-fill{height:100%;background:linear-gradient(90deg,var(--gold),rgba(201,168,76,.5));border-radius:3px;transition:width.5s ease}
-.bar-chart-fill.red{background:linear-gradient(90deg,#C94C4C,rgba(201,76,76,.5))}
-.bar-chart-fill.orange{background:linear-gradient(90deg,#C97A4C,rgba(201,122,76,.5))}
 .total-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
 .total-stat-card{background:var(--dark3);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:16px 12px;text-align:center}
 .total-stat-label{font-family:'Space Mono',monospace;font-size:8px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:8px}
@@ -220,7 +203,6 @@ body{font-family:'DM Sans',sans-serif;color:var(--text);display:flex;flex-direct
 .pr-progress-bar{width:100%;height:4px;background:rgba(255,255,255,.05);border-radius:2px;overflow:hidden}
 .pr-progress-fill{height:100%;background:var(--gold);border-radius:2px;transition:width.5s ease}
 .pr-progress-fill.complete{background:#4CC97A}
-.pr-progress-flame{display:inline-block;margin-left:4px}
 </style>
 </head>
 <body>
@@ -285,7 +267,42 @@ body{font-family:'DM Sans',sans-serif;color:var(--text);display:flex;flex-direct
 </div>
 
 <script>
-const EXERCISE_LIBRARY = {
-  BRUST: [
-    {id:'brust_01',name:'Schrägbankdrücken KH (30°)',winkel:'30°',tags:[{t:'OBERE BRUST',c:'brust'},{t:'KH',c:'glass'}],sets:4,reps:'10-12',rest:90,tipp:'Kurzhanteln erlauben tiefere Dehnung als Langhantel'},
-    {id:'brust_02',name:'Flachbankdrücken LH',winkel:'0°',tags:[{t:'MITTE',c:'brust'},{t:'COMPOUND',c:'compound'}],sets:4,reps:'8-10',rest:120,tipp:'Schulterblätter
+// SAFE DATA INIT
+let DATA;
+try {
+  DATA = JSON.parse(localStorage.getItem('nephData')) || null;
+} catch(e) {
+  DATA = null;
+}
+
+if (!DATA) {
+  DATA = {
+    currentWeek: 4,
+    totalWeeks: 12,
+    deloadWeeks: [4, 8],
+    photos: {},
+    exerciseSelection: {},
+    koerper: {
+      eintraege: [
+        {datum: '2026-03-30', gewicht: 89.25, kfa: 12.0, woche: 1},
+        {datum: '2026-03-31', gewicht: 88.25, kfa: 12.0, woche: 1}
+      ],
+      startGewicht: 89.25,
+      startKfa: 12.0
+    },
+    stats: {
+      gesamtVolumen: 102.9,
+      saetzeGesamt: 278,
+      wochenTrainiert: 4,
+      wochenTotal: 12,
+      muskelVolumen: {
+        'Rücken': 10.0, 'Quads': 9.9, 'Brust': 6.5, 'Schulter': 5.0, 'Bizeps': 3.3,
+        'Gesäß': 2.8, 'Trizeps': 2.7, 'Waden': 2.1, 'Hamstr.': 0.7, 'U.Rücken': 0
+      },
+      bestLeistung: {uebung: 'BEINPRESSE (45°)', woche: 4, gewicht: 200, oneRM: 267, platz: 36}
+    },
+    exercisePRs: [
+      {rank: 1, name: 'BEINPRESSE (45°)', gew: 200, wdh: 12, est1RM: 267, prog: 99, change: 'diese Woche!'},
+      {rank: 2, name: 'KREUZHEBEN', gew: 200, wdh: 12, est1RM: 260, prog: 98, change: 'diese Woche!'},
+      {rank: 3, name: 'KNIEBEUGEN (SMITH MACHINE)', gew: 110, wdh: 10, est1RM: 127, prog: 98, change: 'diese Woche!'},
+      {rank
