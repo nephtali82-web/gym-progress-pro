@@ -1,1493 +1,714 @@
-<!DOCTYPE html>
+import { useState, useEffect, useRef } from “react”;
 
-<html lang="de">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#0A0A0A">
-<title>NEPHS GYMPLAN 💪🏾</title>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --gold:#C9A84C;--gold2:#E8C56A;--dark:#0A0A0A;--dark2:#111;--dark3:#191919;--dark4:#222;--dark5:#2C2C2C;
-  --text:#EDE8DF;--muted:#6B6457;--green:#4CC97A;--red:#C94C4C;--blue:#4C8EC9;--purple:#9B6EC9;--orange:#C97A4C;
-  --safe-top:env(safe-area-inset-top,0px);--safe-bot:env(safe-area-inset-bottom,0px)
-}
-html,body{height:100%;overflow:hidden;background:var(--dark)}
-body{font-family:'DM Sans',sans-serif;color:var(--text);display:flex;flex-direction:column}
-
-/* SPLASH */
-#splash{position:fixed;inset:0;background:var(–dark);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;transition:opacity .6s}
-#splash.hide{opacity:0;pointer-events:none}
-.sp-ring{width:90px;height:90px;border-radius:50%;border:2px solid rgba(201,168,76,.2);display:flex;align-items:center;justify-content:center;animation:pulse 2s ease-in-out infinite}
-@keyframes pulse{0%,100%{transform:scale(1);opacity:.6}50%{transform:scale(1.06);opacity:1}}
-.sp-cg{font-family:‘Bebas Neue’,sans-serif;font-size:30px;color:var(–gold);letter-spacing:3px}
-.sp-title{font-family:‘Bebas Neue’,sans-serif;font-size:38px;letter-spacing:5px;color:var(–text)}
-.sp-sub{font-family:‘Space Mono’,monospace;font-size:10px;letter-spacing:3px;color:var(–muted)}
-.sp-bar-wrap{width:180px;height:2px;background:rgba(201,168,76,.12);border-radius:1px;margin-top:10px}
-.sp-bar{height:100%;width:0;background:linear-gradient(90deg,var(–gold),var(–gold2));border-radius:1px;transition:width 1.2s ease}
-
-/* TOAST */
-#toast{position:fixed;bottom:calc(78px + var(–safe-bot));left:50%;transform:translateX(-50%) translateY(10px);background:var(–dark3);border:1px solid rgba(201,168,76,.4);border-radius:8px;padding:10px 18px;font-family:‘Space Mono’,monospace;font-size:11px;color:var(–gold);opacity:0;transition:all .3s;z-index:8000;white-space:nowrap;pointer-events:none}
-#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-
-/* HEADER */
-.app-hdr{padding:calc(10px + var(–safe-top)) 16px 10px;background:var(–dark2);border-bottom:1px solid rgba(201,168,76,.12);flex-shrink:0}
-.hdr-top{display:flex;justify-content:space-between;align-items:center}
-.hdr-left .hdr-sub{font-family:‘Space Mono’,monospace;font-size:8px;letter-spacing:2px;color:var(–muted);text-transform:uppercase}
-.hdr-left .hdr-title{font-family:‘Bebas Neue’,sans-serif;font-size:30px;letter-spacing:4px;color:var(–gold);line-height:1}
-.hdr-actions{display:flex;gap:7px;align-items:center}
-.icon-btn{width:34px;height:34px;background:var(–dark3);border:1px solid rgba(201,168,76,.18);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px}
-.badge-timer{padding:6px 10px;background:var(–dark3);border:1px solid rgba(201,168,76,.2);border-radius:16px;font-family:‘Space Mono’,monospace;font-size:11px;color:var(–gold)}
-.badge-timer.running{background:rgba(201,168,76,.15);animation:blink 1s infinite}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:.5}}
-.badge-wk{padding:6px 10px;background:var(–dark3);border:1px solid rgba(201,168,76,.2);border-radius:16px;font-family:‘Space Mono’,monospace;font-size:11px;color:var(–gold)}
-
-/* NAV */
-.nav-bottom{position:fixed;bottom:0;left:0;right:0;background:var(–dark2);border-top:1px solid rgba(201,168,76,.1);padding:6px 0 calc(6px + var(–safe-bot));display:grid;grid-template-columns:repeat(5,1fr);z-index:500}
-.nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px;opacity:.35;transition:opacity .2s}
-.nav-item.active{opacity:1}
-.nav-icon{font-size:19px}
-.nav-lbl{font-family:‘Space Mono’,monospace;font-size:7px;letter-spacing:1px;color:var(–gold)}
-
-/* SCREENS */
-.screen{display:none;flex-direction:column;flex:1;overflow:hidden}
-.screen.active{display:flex}
-.scroll{flex:1;overflow-y:auto;padding-bottom:calc(90px + var(–safe-bot))}
-.scroll::-webkit-scrollbar{width:0}
-
-/* WEEK STRIP */
-.week-strip{background:var(–dark2);border-bottom:1px solid rgba(201,168,76,.08);padding:8px 16px;display:flex;gap:5px;overflow-x:auto;flex-shrink:0}
-.week-strip::-webkit-scrollbar{display:none}
-.w-btn{min-width:38px;height:30px;background:var(–dark3);border:1px solid rgba(255,255,255,.07);border-radius:6px;font-family:‘Space Mono’,monospace;font-size:10px;color:var(–muted);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s}
-.w-btn.active{background:var(–gold);border-color:var(–gold);color:var(–dark);font-weight:700}
-.w-btn.done{background:rgba(76,201,122,.1);border-color:rgba(76,201,122,.25);color:var(–green)}
-.w-btn.deload{border-color:rgba(201,122,76,.3);color:var(–orange)}
-
-/* WEEK INFO */
-.week-info{padding:7px 16px;font-family:‘Space Mono’,monospace;font-size:9px;letter-spacing:1px;text-align:center;color:var(–gold);background:rgba(201,168,76,.05);border-bottom:1px solid rgba(201,168,76,.08);flex-shrink:0}
-.week-info.deload{background:rgba(201,122,76,.06);color:var(–orange)}
-
-/* DAY TABS */
-.day-tabs{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;padding:10px 16px;background:var(–dark2);border-bottom:1px solid rgba(201,168,76,.08);flex-shrink:0}
-.day-tab{text-align:center;cursor:pointer;padding:6px 2px;border-radius:8px;border:1px solid transparent;transition:all .2s}
-.day-tab.active{background:rgba(201,168,76,.1);border-color:rgba(201,168,76,.3)}
-.day-tab-day{font-family:‘Space Mono’,monospace;font-size:7px;color:var(–muted);letter-spacing:1px;margin-bottom:2px}
-.day-tab-name{font-family:‘Bebas Neue’,sans-serif;font-size:14px;letter-spacing:1px;color:var(–text);margin-bottom:1px}
-.day-tab.active .day-tab-name{color:var(–gold)}
-.day-tab-sub{font-family:‘Space Mono’,monospace;font-size:6px;color:var(–muted);text-transform:uppercase;margin-bottom:4px}
-.day-dots{display:flex;gap:2px;justify-content:center}
-.dot{width:3px;height:3px;border-radius:50%;background:rgba(201,168,76,.15)}
-.dot.done{background:var(–gold)}
-
-/* DAY HEADER */
-.day-hdr-card{background:var(–dark3);border:1px solid rgba(201,168,76,.2);border-radius:12px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;margin:12px 16px 0}
-.day-hdr-left{display:flex;align-items:center;gap:10px}
-.day-status{width:8px;height:8px;border-radius:50%;background:var(–red)}
-.day-status.done{background:var(–green)}
-.day-hdr-title{font-family:‘Bebas Neue’,sans-serif;font-size:15px;letter-spacing:2px}
-.day-hdr-right{display:flex;gap:7px}
-.btn-sm{padding:6px 10px;background:var(–dark4);border:1px solid rgba(255,255,255,.08);border-radius:6px;font-family:‘Space Mono’,monospace;font-size:9px;color:var(–muted);cursor:pointer;display:flex;align-items:center;gap:5px}
-.btn-sm.active-btn{border-color:rgba(201,168,76,.3);color:var(–gold)}
-
-/* GLASS NOTE */
-.glass-note{background:linear-gradient(135deg,rgba(201,168,76,.14),rgba(201,168,76,.04));border:1px solid rgba(201,168,76,.28);border-radius:12px;padding:12px 14px;margin:10px 16px 0}
-.glass-note-title{font-family:‘Bebas Neue’,sans-serif;font-size:12px;letter-spacing:2px;color:var(–gold);margin-bottom:6px}
-.glass-note-text{font-family:‘DM Sans’,sans-serif;font-size:12px;line-height:1.6;color:var(–text);opacity:.9}
-
-/* MUSCLE SECTION */
-.muscle-section{padding:0 16px;margin-top:20px}
-.muscle-hdr{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
-.muscle-name{font-family:‘Bebas Neue’,sans-serif;font-size:28px;letter-spacing:3px;color:var(–gold)}
-.muscle-cnt{padding:3px 10px;background:var(–dark3);border:1px solid rgba(255,255,255,.07);border-radius:20px;font-family:‘Space Mono’,monospace;font-size:9px;color:var(–muted)}
-.btn-lib{margin-left:auto;padding:5px 10px;background:rgba(201,168,76,.1);border:1px solid rgba(201,168,76,.25);border-radius:6px;font-family:‘Space Mono’,monospace;font-size:8px;color:var(–gold);cursor:pointer;letter-spacing:1px;display:flex;align-items:center;gap:5px}
-
-/* EXERCISE CARD */
-.ex-card{background:var(–dark3);border:1px solid rgba(255,255,255,.06);border-radius:12px;margin-bottom:8px;overflow:hidden;transition:border-color .2s}
-.ex-card.done-card{border-color:rgba(76,201,122,.25)}
-.ex-hdr{display:flex;gap:10px;padding:12px 13px;align-items:flex-start}
-.ex-num{font-family:‘Bebas Neue’,sans-serif;font-size:18px;color:var(–gold);opacity:.45;min-width:22px;flex-shrink:0;padding-top:1px}
-.ex-info{flex:1;cursor:pointer}
-.ex-name{font-family:‘DM Sans’,sans-serif;font-weight:600;font-size:14px;margin-bottom:3px;line-height:1.3}
-.ex-meta{font-family:‘Space Mono’,monospace;font-size:9px;color:var(–muted);margin-bottom:5px}
-.ex-tags{display:flex;gap:4px;flex-wrap:wrap}
-.tag{padding:2px 6px;border-radius:4px;font-family:‘Space Mono’,monospace;font-size:7px;letter-spacing:.5px;text-transform:uppercase}
-.tag-glass{background:rgba(201,168,76,.12);border:1px solid rgba(201,168,76,.22);color:var(–gold)}
-.tag-compound{background:rgba(76,142,201,.1);border:1px solid rgba(76,142,201,.2);color:var(–blue)}
-.tag-iso{background:rgba(155,110,201,.1);border:1px solid rgba(155,110,201,.2);color:var(–purple)}
-.tag-cable{background:rgba(76,201,201,.1);border:1px solid rgba(76,201,201,.2);color:#4CC9C9}
-.tag-machine{background:rgba(120,120,120,.12);border:1px solid rgba(120,120,120,.18);color:#999}
-.ex-btns{display:flex;flex-direction:column;gap:6px;align-items:center;flex-shrink:0}
-.ex-check{width:26px;height:26px;border-radius:50%;border:2px solid rgba(201,168,76,.25);cursor:pointer;transition:all .2s;flex-shrink:0}
-.ex-check.done{background:var(–gold);border-color:var(–gold)}
-.ex-toggle{width:26px;height:26px;border-radius:50%;background:var(–dark4);border:1px solid rgba(201,168,76,.18);display:flex;align-items:center;justify-content:center;color:var(–gold);cursor:pointer;font-size:14px;transition:transform .3s;flex-shrink:0}
-.ex-toggle.open{transform:rotate(45deg)}
-
-/* EX DETAIL */
-.ex-detail{display:none;border-top:1px solid rgba(201,168,76,.08);padding:14px;background:rgba(0,0,0,.2)}
-.ex-detail.open{display:block}
-
-/* WEIGHT SUGGESTION */
-.weight-suggest{background:var(–dark4);border:1px solid rgba(201,168,76,.2);border-radius:10px;padding:10px 13px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center}
-.ws-left{display:flex;align-items:center;gap:8px}
-.ws-icon{font-size:16px}
-.ws-info{}
-.ws-label{font-family:‘Space Mono’,monospace;font-size:8px;letter-spacing:1px;color:var(–gold);text-transform:uppercase;margin-bottom:2px}
-.ws-desc{font-family:‘DM Sans’,sans-serif;font-size:11px;color:var(–muted)}
-.ws-val{font-family:‘Bebas Neue’,sans-serif;font-size:32px;color:var(–gold);line-height:1}
-.ws-unit{font-family:‘Space Mono’,monospace;font-size:9px;color:var(–muted)}
-
-/* MUSCLE INFO */
-.muscle-info-box{background:var(–dark4);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:11px 13px;margin-bottom:12px}
-.mib-title{font-family:‘Space Mono’,monospace;font-size:8px;letter-spacing:1.5px;color:var(–muted);text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:6px}
-.mib-primary{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}
-.mib-secondary{display:flex;gap:6px;flex-wrap:wrap}
-.mib-tag{padding:3px 9px;border-radius:5px;font-family:‘Space Mono’,monospace;font-size:9px;letter-spacing:.5px}
-.mib-tag.primary{background:rgba(201,168,76,.12);border:1px solid rgba(201,168,76,.2);color:var(–gold)}
-.mib-tag.secondary{background:rgba(76,142,201,.1);border:1px solid rgba(76,142,201,.18);color:var(–blue)}
-.mib-sub{font-family:‘Space Mono’,monospace;font-size:7px;color:var(–muted);letter-spacing:1px;margin-bottom:4px}
-
-/* GLASS TIP */
-.glass-tip{background:linear-gradient(135deg,rgba(201,168,76,.16),rgba(201,168,76,.04));border:1px solid rgba(201,168,76,.3);border-radius:10px;padding:11px 13px;margin-bottom:12px}
-.glass-tip-lbl{font-family:‘Bebas Neue’,sans-serif;font-size:12px;letter-spacing:1.5px;color:var(–gold);margin-bottom:5px}
-.glass-tip-txt{font-family:‘DM Sans’,sans-serif;font-size:12px;line-height:1.55}
-
-/* YT BUTTON */
-.btn-yt{display:inline-flex;align-items:center;gap:6px;background:rgba(255,0,0,.15);border:1px solid rgba(255,0,0,.3);border-radius:6px;padding:7px 12px;font-family:‘Space Mono’,monospace;font-size:9px;color:#FF4444;cursor:pointer;letter-spacing:1px;text-decoration:none;margin-bottom:12px}
-.btn-yt:hover{background:rgba(255,0,0,.22)}
-
-/* LOG */
-.log-section{margin-bottom:4px}
-.log-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-.log-lbl{font-family:‘Space Mono’,monospace;font-size:8px;letter-spacing:2px;color:var(–muted);text-transform:uppercase}
-.timer-btn{padding:5px 11px;background:var(–dark5);border:1px solid rgba(201,168,76,.25);border-radius:16px;font-family:‘Space Mono’,monospace;font-size:11px;color:var(–gold);cursor:pointer;min-width:54px;text-align:center}
-.timer-btn.running{background:var(–gold);color:var(–dark);animation:blink 1s infinite}
-.log-grid-hdr{display:grid;grid-template-columns:26px 1fr 1fr 28px;gap:6px;padding:0 2px 6px;font-family:‘Space Mono’,monospace;font-size:8px;color:var(–muted);letter-spacing:1px}
-.log-row{display:grid;grid-template-columns:26px 1fr 1fr 28px;gap:6px;align-items:center;margin-bottom:6px}
-.log-set-num{font-family:‘Space Mono’,monospace;font-size:11px;color:var(–muted);text-align:center}
-.log-inp{background:var(–dark);border:1px solid rgba(255,255,255,.09);border-radius:7px;padding:10px 6px;font-family:‘Space Mono’,monospace;font-size:13px;color:var(–text);text-align:center;width:100%;outline:none;transition:border-color .2s}
-.log-inp:focus{border-color:rgba(201,168,76,.4)}
-.log-inp.pr-inp{border-color:rgba(201,168,76,.5);background:rgba(201,168,76,.05)}
-.log-chk{width:24px;height:24px;border-radius:50%;border:2px solid rgba(201,168,76,.22);cursor:pointer;margin:0 auto;transition:all .2s}
-.log-chk.done{background:var(–gold);border-color:var(–gold)}
-.pr-flash{background:linear-gradient(135deg,var(–gold),var(–gold2));color:var(–dark);font-family:‘Bebas Neue’,sans-serif;font-size:11px;letter-spacing:1px;padding:4px 10px;border-radius:5px;text-align:center;margin:6px 0;display:none;animation:prAnim .4s ease}
-.pr-flash.show{display:block}
-@keyframes prAnim{0%{transform:scale(.85);opacity:0}100%{transform:scale(1);opacity:1}}
-.log-clear{font-family:‘Space Mono’,monospace;font-size:8px;color:var(–muted);text-align:right;margin-top:8px;cursor:pointer;letter-spacing:1px;opacity:.6}
-
-/* PROGRESS CHART (per exercise) */
-.ex-chart-wrap{background:var(–dark4);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:12px;margin-top:10px}
-.ex-chart-tabs{display:flex;gap:6px;margin-bottom:10px}
-.ex-chart-tab{padding:4px 10px;border-radius:5px;font-family:‘Space Mono’,monospace;font-size:8px;color:var(–muted);cursor:pointer;border:1px solid rgba(255,255,255,.07)}
-.ex-chart-tab.active{background:rgba(201,168,76,.15);border-color:rgba(201,168,76,.3);color:var(–gold)}
-.ex-chart-inner{height:120px}
-
-/* BEST LEISTUNG */
-.best-box{background:linear-gradient(135deg,rgba(201,168,76,.12),rgba(201,168,76,.04));border:1px solid rgba(201,168,76,.25);border-radius:10px;padding:11px 13px;margin-top:10px}
-.best-box-lbl{font-family:‘Space Mono’,monospace;font-size:8px;letter-spacing:1.5px;color:var(–gold);text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:6px}
-.best-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.best-metric{background:var(–dark4);border:1px solid rgba(255,255,255,.06);border-radius:8px;padding:10px 6px;text-align:center}
-.best-metric-lbl{font-family:‘Space Mono’,monospace;font-size:7px;letter-spacing:1px;color:var(–muted);text-transform:uppercase;margin-bottom:5px}
-.best-metric-val{font-family:‘Bebas Neue’,sans-serif;font-size:26px;line-height:1}
-.best-metric-val.gold{color:var(–gold)}
-.best-metric-val.purple{color:var(–purple)}
-.best-metric-val.green{color:var(–green)}
-.best-metric-unit{font-family:‘Space Mono’,monospace;font-size:8px;color:var(–muted);margin-top:2px}
-
-/* COMPLETE BTN */
-.complete-btn{margin:16px 16px;padding:15px;background:linear-gradient(135deg,rgba(201,168,76,.25),rgba(201,168,76,.08));border:1px solid rgba(201,168,76,.35);border-radius:10px;font-family:‘Bebas Neue’,sans-serif;font-size:15px;letter-spacing:2px;color:var(–gold);cursor:pointer;text-align:center}
-.complete-btn.done{background:rgba(76,201,122,.12);border-color:rgba(76,201,122,.3);color:var(–green)}
-
-/* DELOAD BANNER */
-.deload-banner{background:linear-gradient(135deg,rgba(201,122,76,.18),rgba(201,122,76,.06));border:1px solid rgba(201,122,76,.35);border-radius:12px;padding:12px 14px;margin:10px 16px 0}
-.deload-title{font-family:‘Bebas Neue’,sans-serif;font-size:16px;letter-spacing:2px;color:var(–orange);margin-bottom:5px}
-.deload-text{font-family:‘DM Sans’,sans-serif;font-size:12px;line-height:1.5;color:var(–text);opacity:.85}
-
-/* HEATMAP */
-.heatmap-section{background:var(–dark3);border:1px solid rgba(255,255,255,.06);border-radius:12px;margin:12px 16px 0;padding:14px}
-.heatmap-title{font-family:‘Space Mono’,monospace;font-size:9px;letter-spacing:2px;color:var(–gold);text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;gap:8px}
-.heatmap-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.heatmap-item{background:var(–dark4);border:1px solid rgba(255,255,255,.06);border-radius:8px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center}
-.heatmap-muscle{font-family:‘DM Sans’,sans-serif;font-size:13px;font-weight:600}
-.heatmap-bar-wrap{flex:1;height:4px;background:rgba(255,255,255,.06);border-radius:2px;margin:0 10px}
-.heatmap-bar{height:100%;border-radius:2px;transition:width .8s ease}
-.heatmap-vol{font-family:‘Space Mono’,monospace;font-size:9px;color:var(–muted)}
-
-/* ===== STATS SCREEN ===== */
-.stats-card{background:var(–dark3);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:14px;margin:12px 16px 0}
-.stats-card-title{font-family:‘Bebas Neue’,sans-serif;font-size:18px;letter-spacing:2px;color:var(–gold);margin-bottom:12px;display:flex;align-items:center;gap:8px}
-.stat-grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
-.stat-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
-.stat-mini{background:var(–dark4);border:1px solid rgba(255,255,255,.05);border-radius:10px;padding:12px 8px;text-align:center}
-.stat-mini-lbl{font-family:‘Space Mono’,monospace;font-size:7px;letter-spacing:1px;color:var(–muted);text-transform:uppercase;margin-bottom:5px}
-.stat-mini-val{font-family:‘Bebas Neue’,sans-serif;font-size:34px;line-height:1;color:var(–gold)}
-.stat-mini-val.green{color:var(–green)}
-.stat-mini-val.purple{color:var(–purple)}
-.stat-mini-val.blue{color:var(–blue)}
-.stat-mini-unit{font-family:‘Space Mono’,monospace;font-size:8px;color:var(–muted);margin-top:2px}
-.chart-h180{height:180px;margin-bottom:8px}
-.pr-list-item{background:var(–dark4);border:1px solid rgba(255,255,255,.05);border-radius:10px;padding:12px 13px;margin-bottom:7px;display:flex;justify-content:space-between;align-items:center}
-.pr-item-left{}
-.pr-item-name{font-family:‘DM Sans’,sans-serif;font-weight:600;font-size:13px}
-.pr-item-date{font-family:‘Space Mono’,monospace;font-size:8px;color:var(–muted);margin-top:3px}
-.pr-item-right{text-align:right}
-.pr-item-kg{font-family:‘Bebas Neue’,sans-serif;font-size:26px;color:var(–gold);line-height:1}
-.pr-item-reps{font-family:‘Space Mono’,monospace;font-size:9px;color:var(–muted)}
-.week-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:7px}
-.week-cell{background:var(–dark4);border:1px solid rgba(255,255,255,.05);border-radius:8px;padding:8px 4px;text-align:center}
-.week-cell-lbl{font-family:‘Space Mono’,monospace;font-size:7px;color:var(–muted)}
-.week-cell-val{font-family:‘Bebas Neue’,sans-serif;font-size:18px;color:var(–gold);line-height:1.2}
-.week-cell.done-week .week-cell-val{color:var(–green)}
-.week-cell.cur-week{border-color:rgba(201,168,76,.4)}
-
-/* ===== BODY SCREEN ===== */
-.body-inputs{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
-.body-inp-group{background:var(–dark4);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:12px}
-.body-inp-lbl{font-family:‘Space Mono’,monospace;font-size:8px;letter-spacing:1px;color:var(–muted);text-transform:uppercase;margin-bottom:7px}
-.body-inp{background:transparent;border:none;font-family:‘Space Mono’,monospace;font-size:18px;color:var(–text);width:100%;outline:none}
-.body-inp::placeholder{color:rgba(107,100,87,.35)}
-.body-inp-unit{font-family:‘Space Mono’,monospace;font-size:9px;color:var(–muted);margin-top:2px}
-.btn-save{width:100%;padding:13px;background:linear-gradient(135deg,rgba(201,168,76,.22),rgba(201,168,76,.08));border:1px solid rgba(201,168,76,.35);border-radius:8px;font-family:‘Bebas Neue’,sans-serif;font-size:14px;letter-spacing:2px;color:var(–gold);cursor:pointer;margin-bottom:12px}
-.chart-h200{height:200px;margin-bottom:10px}
-.history-row{background:var(–dark4);border:1px solid rgba(255,255,255,.05);border-radius:9px;padding:10px 13px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center}
-.history-date{font-family:‘Space Mono’,monospace;font-size:9px;color:var(–gold)}
-.history-vals{display:flex;gap:16px}
-.history-val{text-align:center}
-.history-val-num{font-family:‘Bebas Neue’,sans-serif;font-size:20px;line-height:1}
-.history-val-unit{font-family:‘Space Mono’,monospace;font-size:7px;color:var(–muted)}
-
-/* ===== FOTOS SCREEN ===== */
-.photo-upload-area{padding:14px 16px;border-bottom:1px solid rgba(201,168,76,.08);flex-shrink:0}
-.btn-photo-upload{width:100%;padding:15px;background:linear-gradient(135deg,rgba(201,168,76,.18),rgba(201,168,76,.06));border:2px dashed rgba(201,168,76,.35);border-radius:12px;font-family:‘Bebas Neue’,sans-serif;font-size:15px;letter-spacing:2px;color:var(–gold);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px}
-.photo-filter-bar{display:flex;gap:6px;padding:10px 16px;overflow-x:auto;flex-shrink:0;border-bottom:1px solid rgba(201,168,76,.06)}
-.photo-filter-bar::-webkit-scrollbar{display:none}
-.pf-btn{padding:5px 12px;background:var(–dark3);border:1px solid rgba(255,255,255,.07);border-radius:16px;font-family:‘Space Mono’,monospace;font-size:9px;color:var(–muted);cursor:pointer;white-space:nowrap;flex-shrink:0}
-.pf-btn.active{background:rgba(201,168,76,.12);border-color:rgba(201,168,76,.3);color:var(–gold)}
-.photo-grid-wrap{flex:1;overflow-y:auto;padding:14px 16px}
-.photo-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.photo-item{position:relative;aspect-ratio:3/4;background:var(–dark3);border:1px solid rgba(255,255,255,.06);border-radius:10px;overflow:hidden}
-.photo-item img{width:100%;height:100%;object-fit:cover}
-.photo-del{position:absolute;top:7px;right:7px;width:26px;height:26px;background:rgba(201,76,76,.9);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px}
-.photo-date{position:absolute;bottom:0;left:0;right:0;padding:6px 8px;background:linear-gradient(to top,rgba(0,0,0,.85),transparent);font-family:‘Space Mono’,monospace;font-size:8px;color:var(–text)}
-.photo-wk-badge{position:absolute;top:7px;left:7px;background:rgba(201,168,76,.9);border-radius:4px;padding:2px 6px;font-family:‘Space Mono’,monospace;font-size:8px;color:var(–dark);font-weight:700}
-.photo-empty{text-align:center;padding:60px 20px;color:var(–muted);font-family:‘Space Mono’,monospace;font-size:10px;line-height:2}
-
-/* ===== TOOLS SCREEN ===== */
-.tool-card{background:var(–dark3);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:14px;margin:12px 16px 0}
-.tool-title{font-family:‘Bebas Neue’,sans-serif;font-size:20px;letter-spacing:2px;color:var(–gold);margin-bottom:4px}
-.tool-desc{font-family:‘Space Mono’,monospace;font-size:8px;color:var(–muted);letter-spacing:1px;margin-bottom:12px}
-.tool-row{display:flex;gap:8px;margin-bottom:10px}
-.tool-inp{flex:1;background:var(–dark4);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:10px;font-family:‘Space Mono’,monospace;font-size:13px;color:var(–text);outline:none;text-align:center}
-.tool-inp::placeholder{color:rgba(107,100,87,.35)}
-.tool-select{flex:1;background:var(–dark4);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:10px;font-family:‘Space Mono’,monospace;font-size:11px;color:var(–text);outline:none}
-.btn-calc{padding:10px 14px;background:var(–gold);border:none;border-radius:8px;font-family:‘Bebas Neue’,sans-serif;font-size:14px;color:var(–dark);cursor:pointer;letter-spacing:1px;white-space:nowrap}
-.btn-calc-full{width:100%;padding:12px;background:var(–gold);border:none;border-radius:8px;font-family:‘Bebas Neue’,sans-serif;font-size:15px;color:var(–dark);cursor:pointer;letter-spacing:2px;margin-bottom:10px}
-.tool-result{background:var(–dark4);border:1px solid rgba(201,168,76,.2);border-radius:9px;padding:13px;text-align:center;margin-top:4px}
-.tool-result-val{font-family:‘Bebas Neue’,sans-serif;font-size:48px;color:var(–gold);line-height:1}
-.tool-result-sub{font-family:‘Space Mono’,monospace;font-size:9px;color:var(–muted);margin-top:6px;line-height:1.8}
-.supp-item{background:var(–dark4);border:1px solid rgba(255,255,255,.05);border-radius:8px;padding:11px;margin-bottom:6px}
-.supp-name{font-family:‘DM Sans’,sans-serif;font-weight:600;font-size:13px;margin-bottom:3px}
-.supp-dose{font-family:‘Space Mono’,monospace;font-size:9px;color:var(–gold);margin-bottom:2px}
-.supp-note{font-family:‘DM Sans’,sans-serif;font-size:11px;color:var(–muted)}
-
-/* BACKUP ROW */
-.backup-row{display:flex;gap:8px;padding:12px 16px}
-.btn-backup{flex:1;padding:11px;background:var(–dark3);border:1px solid rgba(201,168,76,.18);border-radius:8px;font-family:‘Space Mono’,monospace;font-size:9px;color:var(–gold);cursor:pointer;letter-spacing:1px;text-align:center}
-.btn-backup.danger{color:var(–red);border-color:rgba(201,76,76,.18)}
-
-/* MODAL */
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.97);z-index:700;display:none;flex-direction:column}
-.modal.open{display:flex}
-.modal-hdr{padding:calc(14px + var(–safe-top)) 16px 12px;border-bottom:1px solid rgba(201,168,76,.12);display:flex;justify-content:space-between;align-items:flex-start;flex-shrink:0}
-.modal-title{font-family:‘Bebas Neue’,sans-serif;font-size:24px;letter-spacing:3px;color:var(–gold)}
-.modal-sub{font-family:‘Space Mono’,monospace;font-size:8px;color:var(–muted);letter-spacing:1px;margin-top:4px}
-.modal-close{width:30px;height:30px;background:var(–dark4);border:1px solid rgba(255,255,255,.08);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;flex-shrink:0}
-.modal-body{flex:1;overflow-y:auto;padding:14px}
-.modal-footer{padding:12px 16px;border-top:1px solid rgba(201,168,76,.08);background:var(–dark2);flex-shrink:0}
-.lib-item{background:var(–dark3);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:12px 13px;margin-bottom:7px;display:flex;gap:11px;align-items:flex-start;cursor:pointer;transition:all .2s}
-.lib-item.on{border-color:rgba(201,168,76,.38);background:rgba(201,168,76,.06)}
-.lib-chk{width:22px;height:22px;border:2px solid rgba(201,168,76,.25);border-radius:5px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;transition:all .2s}
-.lib-item.on .lib-chk{background:var(–gold);border-color:var(–gold);color:var(–dark)}
-.lib-item-name{font-family:‘DM Sans’,sans-serif;font-weight:600;font-size:14px;margin-bottom:3px}
-.lib-item-meta{font-family:‘Space Mono’,monospace;font-size:9px;color:var(–muted);margin-bottom:5px}
-.lib-item-tags{display:flex;gap:4px;flex-wrap:wrap}
-.lib-count{font-family:‘Space Mono’,monospace;font-size:10px;color:var(–muted);text-align:center;margin-bottom:10px}
-.lib-count strong{color:var(–gold)}
-.btn-lib-save{width:100%;padding:14px;background:var(–gold);border:none;border-radius:8px;font-family:‘Bebas Neue’,sans-serif;font-size:15px;letter-spacing:2px;color:var(–dark);cursor:pointer}
-</style>
-
-</head>
-<body>
-
-<!-- SPLASH -->
-
-<div id="splash">
-  <div class="sp-ring"><div class="sp-cg">NG</div></div>
-  <div class="sp-title">NEPHS GYMPLAN</div>
-  <div class="sp-sub">CHARLES GLASS · UPPER/LOWER</div>
-  <div class="sp-bar-wrap"><div class="sp-bar" id="spBar"></div></div>
-</div>
-<div id="toast"></div>
-
-<!-- HEADER -->
-
-<div class="app-hdr">
-  <div class="hdr-top">
-    <div class="hdr-left">
-      <div class="hdr-sub">4-DAY UPPER/LOWER · CHARLES GLASS</div>
-      <div class="hdr-title">NEPHS GYMPLAN</div>
-    </div>
-    <div class="hdr-actions">
-      <div class="icon-btn" onclick="exportBackup()">●</div>
-      <div class="badge-timer" id="globalTimer" onclick="toggleGlobalTimer()">▶ START</div>
-      <div class="badge-wk">W<span id="wkNum">1</span></div>
-    </div>
-  </div>
-</div>
-
-<!-- WORKOUT SCREEN -->
-
-<div class="screen active" id="sWorkout">
-  <div class="week-strip" id="weekStrip"></div>
-  <div class="week-info" id="weekInfo"></div>
-  <div class="day-tabs" id="dayTabs"></div>
-  <div class="scroll" id="workoutScroll"></div>
-</div>
-
-<!-- STATS SCREEN -->
-
-<div class="screen" id="sStats">
-  <div class="scroll" id="statsScroll"></div>
-</div>
-
-<!-- BODY SCREEN -->
-
-<div class="screen" id="sBody">
-  <div class="scroll" id="bodyScroll"></div>
-</div>
-
-<!-- PHOTOS SCREEN -->
-
-<div class="screen" id="sPhotos">
-  <div class="photo-upload-area">
-    <input type="file" id="photoInput" accept="image/*" multiple>
-    <button class="btn-photo-upload" onclick="document.getElementById('photoInput').click()">
-      <span>📷</span><span>FOTO AUFNEHMEN / HOCHLADEN</span>
-    </button>
-  </div>
-  <div class="photo-filter-bar" id="photoFilterBar"></div>
-  <div class="photo-grid-wrap">
-    <div class="photo-grid" id="photoGrid"></div>
-  </div>
-</div>
-
-<!-- TOOLS SCREEN -->
-
-<div class="screen" id="sTools">
-  <div class="scroll" id="toolsScroll"></div>
-</div>
-
-<!-- BOTTOM NAV -->
-
-<div class="nav-bottom">
-  <div class="nav-item active" id="nav0" onclick="switchScreen(0)"><div class="nav-icon">🏋🏾</div><div class="nav-lbl">WORKOUT</div></div>
-  <div class="nav-item" id="nav1" onclick="switchScreen(1)"><div class="nav-icon">📊</div><div class="nav-lbl">STATS</div></div>
-  <div class="nav-item" id="nav2" onclick="switchScreen(2)"><div class="nav-icon">📏</div><div class="nav-lbl">KÖRPER</div></div>
-  <div class="nav-item" id="nav3" onclick="switchScreen(3)"><div class="nav-icon">📸</div><div class="nav-lbl">FOTOS</div></div>
-  <div class="nav-item" id="nav4" onclick="switchScreen(4)"><div class="nav-icon">🧮</div><div class="nav-lbl">TOOLS</div></div>
-</div>
-
-<!-- LIBRARY MODAL -->
-
-<div class="modal" id="libModal">
-  <div class="modal-hdr">
-    <div>
-      <div class="modal-title" id="libTitle">BIBLIOTHEK</div>
-      <div class="modal-sub" id="libSub">WÄHLE DEINE ÜBUNGEN</div>
-    </div>
-    <div class="modal-close" onclick="closeLib()">×</div>
-  </div>
-  <div class="modal-body" id="libBody"></div>
-  <div class="modal-footer">
-    <div class="lib-count" id="libCount"><strong>0</strong> aktive Übungen</div>
-    <button class="btn-lib-save" onclick="saveLib()">SPEICHERN</button>
-  </div>
-</div>
-
-<script>
-// ═══════════════════════════════════════════════════════════
-// DATA
-// ═══════════════════════════════════════════════════════════
-let D;
-try { D = JSON.parse(localStorage.getItem('nephGymV3')); } catch(e) { D=null; }
-if (!D) D = {
-  week: 1, day: 0, totalWeeks: 12,
-  deloadWeeks: [4,8,12],
-  sel: {},       // muscle_day -> [indices]
-  logs: {},      // wk_day_exName_set -> {kg,reps,done}
-  exDone: {},    // exKey -> bool
-  prs: {},       // exName -> {kg,reps,vol,date,week}
-  history: [],
-  completedDays: {},
-  body: {entries:[]},
-  photos: []     // [{data,date,time,week,day,dayLabel}]
+const formatTime = (date) => new Date(date).toLocaleTimeString(“de-DE”, { hour: “2-digit”, minute: “2-digit” });
+const formatDate = (date) => new Date(date).toLocaleDateString(“de-DE”, { day: “2-digit”, month: “2-digit”, year: “numeric” });
+const formatDuration = (ms) => {
+const h = Math.floor(ms / 3600000);
+const m = Math.floor((ms % 3600000) / 60000);
+return h > 0 ? `${h}h ${m}m` : `${m}m`;
 };
-save();
+const MONTH_NAMES = [“Januar”,“Februar”,“März”,“April”,“Mai”,“Juni”,“Juli”,“August”,“September”,“Oktober”,“November”,“Dezember”];
 
-function save(){localStorage.setItem('nephGymV3',JSON.stringify(D));}
-function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2300);}
-
-// ═══════════════════════════════════════════════════════════
-// EXERCISE LIBRARY — 10 PER MUSCLE
-// ═══════════════════════════════════════════════════════════
-const LIB = {
-  Brust:[
-    {name:'Schrägbankdrücken KH (30°)',sets:'4',reps:'8-12',tags:['glass','compound'],equip:'Kurzhanteln + Schrägbank (30°)',primary:['Obere Brust'],secondary:['Vordere Schulter','Trizeps'],tipp:'KH erlauben tiefere Dehnung als LH. Ellbogen 45° vom Körper. Volle Streckung oben ohne zu strecken.',yt:'https://www.youtube.com/results?search_query=incline+dumbbell+press+charles+glass'},
-    {name:'Kabelfliegen (High → Low)',sets:'3-4',reps:'12-15',tags:['cable','iso'],equip:'Kabelzug hoch',primary:['Untere/Mittlere Brust'],secondary:['Vordere Schulter'],tipp:'Arme leicht gebeugt, Bewegung aus der Brust initiieren. Maximale Endkontraktion halten 1 Sek.',yt:'https://www.youtube.com/results?search_query=cable+crossover+high+to+low'},
-    {name:'Flachbankdrücken LH',sets:'4',reps:'6-10',tags:['compound'],equip:'Langhantel + Flachbank',primary:['Brust (gesamt)'],secondary:['Trizeps','Schulter'],tipp:'Schulterblätter zusammenziehen & fixieren. Stange zur unteren Brust. Kontrolliertes Senken.',yt:'https://www.youtube.com/results?search_query=bench+press+form+technique'},
-    {name:'Butterfly (Maschine)',sets:'3-4',reps:'12-15',tags:['machine','iso'],equip:'Butterfly-Maschine',primary:['Brust Mitte'],secondary:['Vordere Schulter'],tipp:'Sitz so, dass Arme auf Brusthöhe. Kontrolle beim Öffnen, Kontraktion beim Schließen.',yt:'https://www.youtube.com/results?search_query=pec+deck+fly+technique'},
-    {name:'Dips (Brust-Fokus)',sets:'3',reps:'10-15',tags:['compound'],equip:'Dipstangen',primary:['Untere Brust'],secondary:['Trizeps','Schulter'],tipp:'Oberkörper ~30° nach vorne lehnen. Breiter Griff. Tiefes Senken für maximale Dehnung.',yt:'https://www.youtube.com/results?search_query=chest+dips+technique'},
-    {name:'Kabelfliegen (Low → High)',sets:'3',reps:'12-15',tags:['cable','iso'],equip:'Kabelzug unten',primary:['Obere Brust'],secondary:['Vordere Schulter'],tipp:'Fokus Oberbrust. Hände treffen sich über dem Kopf. Kontinuierliche Spannung.',yt:'https://www.youtube.com/results?search_query=cable+fly+low+to+high+upper+chest'},
-    {name:'KH-Flyes flach',sets:'3',reps:'12-15',tags:['iso'],equip:'Kurzhanteln + Flachbank',primary:['Brust Mitte'],secondary:['Vordere Schulter'],tipp:'Weiter Bogen wie Bäume umarmen. Ellbogen immer leicht gebeugt. Stretch unten maximieren.',yt:'https://www.youtube.com/results?search_query=dumbbell+fly+chest+form'},
-    {name:'Schrägbankdrücken LH',sets:'3',reps:'8-10',tags:['compound'],equip:'Langhantel + Schrägbank',primary:['Obere Brust'],secondary:['Trizeps','Schulter'],tipp:'45° Bank. Schulterblätter retrahiert. Stange zur Oberbrust. Gleichmäßige Bewegung.',yt:'https://www.youtube.com/results?search_query=incline+barbell+press+form'},
-    {name:'Hammer Strength Brust',sets:'3',reps:'10-12',tags:['machine','compound'],equip:'Hammer Strength Maschine',primary:['Brust'],secondary:['Trizeps'],tipp:'Einseitig ausführen für bessere Isolation. Körper leicht drehen für natürlichere Bewegung.',yt:'https://www.youtube.com/results?search_query=hammer+strength+chest+press'},
-    {name:'Push-Ups (Wide Grip)',sets:'3',reps:'15-20',tags:['compound'],equip:'Körpergewicht',primary:['Brust'],secondary:['Trizeps','Schulter'],tipp:'Aufwärmen oder Finisher. Breiter Griff. Brust fast den Boden berühren lassen.',yt:'https://www.youtube.com/results?search_query=wide+grip+push+ups+chest'}
-  ],
-  Rücken:[
-    {name:'Latzug (breiter Griff)',sets:'4',reps:'10-12',tags:['compound','cable'],equip:'Latzugmaschine',primary:['Latissimus'],secondary:['Bizeps','Rhomboids'],tipp:'Ellbogen zur Hüfte ziehen. Schulterblätter zusammendrücken am Ende. Nicht schwingen.',yt:'https://www.youtube.com/results?search_query=lat+pulldown+wide+grip+form'},
-    {name:'Seilrudern sitzend',sets:'4',reps:'10-12',tags:['cable','compound'],equip:'Kabelzug + Rudergriff',primary:['Mittlerer Rücken','Rhomboids'],secondary:['Bizeps','Lats'],tipp:'Schulterblätter zuerst retrahieren, dann Arme. Oberkörper aufrecht, keine Beugung.',yt:'https://www.youtube.com/results?search_query=seated+cable+row+form+technique'},
-    {name:'Einarm KH-Rudern',sets:'3',reps:'10-12',tags:['iso','compound'],equip:'Kurzhantel + Bank',primary:['Lats','Rhomboids'],secondary:['Bizeps','Hintere Schulter'],tipp:'Bank abstützen. Ellbogen nah am Körper halten. Leichte Rotation am Ende für volle Kontraktion.',yt:'https://www.youtube.com/results?search_query=one+arm+dumbbell+row+charles+glass'},
-    {name:'Klimmzüge (Untergriff)',sets:'3-4',reps:'6-10',tags:['compound'],equip:'Klimmzugstange',primary:['Lats'],secondary:['Bizeps','Kern'],tipp:'Untergriff = mehr Bizep und unterer Lat. Voller ROM, Pause unten für Dehnung.',yt:'https://www.youtube.com/results?search_query=chin+ups+form+technique'},
-    {name:'T-Bar Rudern',sets:'3-4',reps:'8-12',tags:['compound'],equip:'T-Bar Ruder',primary:['Mittlerer Rücken'],secondary:['Bizeps','Lats'],tipp:'Massebauer. Voller Fokus auf Kontraktion. Oberkörper ~45°. Keine Hüftbewegung.',yt:'https://www.youtube.com/results?search_query=t+bar+row+form'},
-    {name:'Face Pulls Kabel',sets:'3',reps:'15-20',tags:['cable','iso'],equip:'Kabel + Seil',primary:['Hintere Schulter','Rhomboids'],secondary:['Rotatorenmanschette'],tipp:'Hände zu den Ohren ziehen. Ellbogen hoch über Schultern. Essenziell für Schultergesundheit!',yt:'https://www.youtube.com/results?search_query=face+pull+technique+shoulder+health'},
-    {name:'Rack Pulls',sets:'3',reps:'6-8',tags:['compound'],equip:'Power Rack + LH',primary:['Unterer Rücken','Fallen'],secondary:['Gesäß','Hamstrings'],tipp:'Stange auf Kniehöhe im Rack. Isometrische Aktivierung des gesamten Rückens. Sehr schwer.',yt:'https://www.youtube.com/results?search_query=rack+pulls+form+technique'},
-    {name:'Hyperextensions',sets:'3',reps:'12-15',tags:['iso'],equip:'Rückenstrecker-Bank',primary:['Unterer Rücken'],secondary:['Gesäß','Hamstrings'],tipp:'Für unteren Rücken und Kettenmuskeln. Kontrolle wichtiger als Gewicht. Keine Überstreckung.',yt:'https://www.youtube.com/results?search_query=hyperextension+back+extension+form'},
-    {name:'Latzug (Untergriff eng)',sets:'3',reps:'10-12',tags:['cable','compound'],equip:'Latzugmaschine',primary:['Unterer Lat'],secondary:['Bizeps'],tipp:'Enger Untergriff betont unteren Lat und Bizeps stärker. Voller ROM.',yt:'https://www.youtube.com/results?search_query=close+grip+lat+pulldown+underhand'},
-    {name:'Kreuzheben',sets:'3',reps:'4-6',tags:['compound'],equip:'Langhantel',primary:['Gesamter Rücken'],secondary:['Gesäß','Beine','Kern'],tipp:'Schwerste Übung. Immer ausgeruht und aufgewärmt. Neutrale Wirbelsäule = Pflicht.',yt:'https://www.youtube.com/results?search_query=deadlift+form+technique+conventional'}
-  ],
-  Schulter:[
-    {name:'KH-Schulterdrücken sitzend',sets:'4',reps:'8-12',tags:['compound'],equip:'Kurzhanteln + Bank',primary:['Vordere Schulter','Seitliche Schulter'],secondary:['Trizeps'],tipp:'KH seitlich am Kopf starten. Nicht vollständig strecken zum Gelenkschutz. Kontrolliert.',yt:'https://www.youtube.com/results?search_query=seated+dumbbell+shoulder+press+form'},
-    {name:'Seitliches Seitheben KH',sets:'4',reps:'12-15',tags:['iso'],equip:'Kurzhanteln',primary:['Seitliche Schulter'],secondary:[],tipp:'Kleiner Finger minimal höher. Ellbogen leicht gebeugt. Kurze Pause oben. Keine Schwingbewegung!',yt:'https://www.youtube.com/results?search_query=lateral+raises+form+charles+glass'},
-    {name:'Kabel Seitheben (einseitig)',sets:'3',reps:'15-20',tags:['cable','iso'],equip:'Kabelzug unten',primary:['Seitliche Schulter'],secondary:[],tipp:'Konstantere Spannung als KH! Kabel von gegenüberliegender Seite führen. Langsam und kontrolliert.',yt:'https://www.youtube.com/results?search_query=cable+lateral+raise+technique'},
-    {name:'Rear Delt Flyes (Maschine)',sets:'3-4',reps:'15-20',tags:['machine','iso'],equip:'Butterfly-Maschine (umgekehrt)',primary:['Hintere Schulter'],secondary:['Rhomboids'],tipp:'Hintere Schulter oft vernachlässigt! Gesicht nach unten. Ellbogen hoch führen. Langsam.',yt:'https://www.youtube.com/results?search_query=reverse+pec+deck+rear+delt+form'},
-    {name:'Military Press (Stange)',sets:'4',reps:'6-10',tags:['compound'],equip:'Langhantel',primary:['Vordere/Seitliche Schulter'],secondary:['Trizeps','Kern'],tipp:'Stehend oder sitzend. Volle Streckung. Nacken neutral. Kern angespannt.',yt:'https://www.youtube.com/results?search_query=military+press+overhead+press+form'},
-    {name:'Arnold Press',sets:'3',reps:'10-12',tags:['compound'],equip:'Kurzhanteln',primary:['Vordere/Seitliche Schulter'],secondary:['Trizeps'],tipp:'Rotation beim Drücken nach außen entwickelt alle drei Schulterköpfe simultan.',yt:'https://www.youtube.com/results?search_query=arnold+press+form+technique'},
-    {name:'Frontales Seitheben KH',sets:'3',reps:'12-15',tags:['iso'],equip:'Kurzhanteln',primary:['Vordere Schulter'],secondary:[],tipp:'Alternierend oder gleichzeitig. Handrücken zeigt in Oberposition nach oben.',yt:'https://www.youtube.com/results?search_query=front+raise+dumbbell+form'},
-    {name:'Upright Rows Kabel',sets:'3',reps:'12-15',tags:['cable','compound'],equip:'Kabelzug + Stange',primary:['Seitliche Schulter','Fallen'],secondary:['Bizeps'],tipp:'Kabel = gleichmäßige Spannung. Ellbogen leicht über Schultern führen. Breiter Griff.',yt:'https://www.youtube.com/results?search_query=cable+upright+row+technique'},
-    {name:'Schulterdrücken (Smith)',sets:'3',reps:'10-12',tags:['machine','compound'],equip:'Smith Machine',primary:['Schulter'],secondary:['Trizeps'],tipp:'Feste Führung ideal für schwere Belastung. Körper aufrecht, nicht nach hinten lehnen.',yt:'https://www.youtube.com/results?search_query=smith+machine+shoulder+press+form'},
-    {name:'Face Pulls (Schultergesundheit)',sets:'3',reps:'20',tags:['cable','iso'],equip:'Kabel + Seil',primary:['Hintere Schulter'],secondary:['Rotatorenmanschette'],tipp:'Pflichtübung! Präventiv für Schulterverletzungen. Hände zu Ohren, Ellbogen hoch.',yt:'https://www.youtube.com/results?search_query=face+pull+rotator+cuff+health'}
-  ],
-  Bizeps:[
-    {name:'Konzentrationscurls KH',sets:'3-4',reps:'10-15',tags:['iso','glass'],equip:'Kurzhantel',primary:['Bizeps (kurzer Kopf)'],secondary:[],tipp:'Klassik Charles Glass! Ellbogen auf Innenschenkel. Supinieren am Ende. Volle Kontraktion halten.',yt:'https://www.youtube.com/results?search_query=concentration+curls+charles+glass'},
-    {name:'Kabelfliegen Curl (einseitig)',sets:'3',reps:'12-15',tags:['cable','iso'],equip:'Kabelzug unten',primary:['Bizeps'],secondary:[],tipp:'Kontinuierliche Kabelspannung = besser als KH in bestimmten Winkeln. Langsam und kontrolliert.',yt:'https://www.youtube.com/results?search_query=cable+curl+one+arm+technique'},
-    {name:'Hammer Curls KH',sets:'3',reps:'10-12',tags:['iso'],equip:'Kurzhanteln',primary:['Brachialis','Brachioradialis'],secondary:['Bizeps'],tipp:'Neutralgriff trainiert Brachialis für mehr Gesamtarmdicke. Schläger-Griff.',yt:'https://www.youtube.com/results?search_query=hammer+curls+form+brachialis'},
-    {name:'Schrägbankscurls KH',sets:'3',reps:'10-12',tags:['iso'],equip:'Kurzhanteln + Schrägbank',primary:['Bizeps (langer Kopf)'],secondary:[],tipp:'Arme hängen lassen für maximale Dehnung unten. Langer Bizepskopf betont. Volle ROM.',yt:'https://www.youtube.com/results?search_query=incline+dumbbell+curl+long+head+bicep'},
-    {name:'Stangencurls EZ-Stange',sets:'3-4',reps:'8-10',tags:['compound'],equip:'EZ-Stange',primary:['Bizeps'],secondary:['Brachialis'],tipp:'Schulterbreiter Griff. Ellbogen nah am Körper fixiert. Keine Schwingbewegung. Langsam senken.',yt:'https://www.youtube.com/results?search_query=ez+bar+curl+form+technique'},
-    {name:'Spider Curls',sets:'3',reps:'12-15',tags:['iso'],equip:'Schrägbank + KH/EZ-Stange',primary:['Bizeps (kurzer Kopf)'],secondary:[],tipp:'Brust auf Schrägbank abstützen. Kurzer Bizepskopf maximiert. Volle Streckung unten.',yt:'https://www.youtube.com/results?search_query=spider+curls+bicep+short+head'},
-    {name:'Prediger Curls (Maschine)',sets:'3',reps:'12-15',tags:['machine','iso'],equip:'Prediger Curl Maschine',primary:['Bizeps'],secondary:[],tipp:'Ellbogen auf Polster. Null Bewegung des Oberarms. Konstante Spannung durch gesamten ROM.',yt:'https://www.youtube.com/results?search_query=preacher+curl+machine+form'},
-    {name:'Zottman Curls',sets:'3',reps:'10-12',tags:['iso'],equip:'Kurzhanteln',primary:['Bizeps','Brachioradialis'],secondary:[],tipp:'Supiniert hoch, proniert runter. Trainiert Bizeps UND Brachioradialis in einem.',yt:'https://www.youtube.com/results?search_query=zottman+curl+form+technique'},
-    {name:'Cable Drag Curls',sets:'3',reps:'12-15',tags:['cable','iso'],equip:'Kabelzug',primary:['Bizeps'],secondary:[],tipp:'Stange/Kabel am Körper nach oben ziehen. Extreme Bizepskontraktion in Hochposition.',yt:'https://www.youtube.com/results?search_query=cable+drag+curl+bicep'},
-    {name:'Chin-Ups',sets:'3',reps:'6-10',tags:['compound'],equip:'Klimmzugstange',primary:['Bizeps','Lats'],secondary:['Kern'],tipp:'Untergriff schulterbreit. Brust zur Stange. Pause unten für Dehnung. Schwerste Bizeps-Übung.',yt:'https://www.youtube.com/results?search_query=chin+ups+form+technique+biceps'}
-  ],
-  Trizeps:[
-    {name:'Kabeldrücken abwärts (V-Griff)',sets:'4',reps:'12-15',tags:['cable','iso'],equip:'Kabelzug + V-Griff',primary:['Trizeps (lateraler Kopf)'],secondary:[],tipp:'Ellbogen FEST am Körper. Handgelenke neutral. Volle Streckung unten. Pause halten.',yt:'https://www.youtube.com/results?search_query=tricep+pushdown+v+bar+form'},
-    {name:'Skull Crushers EZ-Stange',sets:'3-4',reps:'10-12',tags:['iso'],equip:'EZ-Stange + Flachbank',primary:['Trizeps (langer Kopf)'],secondary:[],tipp:'Ellbogen zeigen zur Decke. Stange Richtung Stirn senken (nicht hinter den Kopf!). Kontrolliert.',yt:'https://www.youtube.com/results?search_query=skull+crushers+form+technique'},
-    {name:'Dips (Trizeps)',sets:'3',reps:'10-15',tags:['compound'],equip:'Dipstangen',primary:['Trizeps'],secondary:['Brust','Schulter'],tipp:'Aufrechter Oberkörper + enger Griff = Trizeps-Fokus. Volle Streckung oben.',yt:'https://www.youtube.com/results?search_query=tricep+dips+form+technique'},
-    {name:'Kabel Overhead Extension',sets:'3',reps:'12-15',tags:['cable','iso'],equip:'Kabel + Seil',primary:['Trizeps (langer Kopf)'],secondary:[],tipp:'Seilzug hinter dem Kopf. Langer Kopf maximal gedehnt! Ellbogen eng halten.',yt:'https://www.youtube.com/results?search_query=cable+overhead+tricep+extension'},
-    {name:'KH Overhead Extension (einseitig)',sets:'3',reps:'12-15',tags:['iso'],equip:'Kurzhantel',primary:['Trizeps (langer Kopf)'],secondary:[],tipp:'Eine Hand. Ellbogen hoch zeigen. Maximale Dehnung des langen Kopfes. Sehr effektiv.',yt:'https://www.youtube.com/results?search_query=single+arm+overhead+tricep+extension'},
-    {name:'Close-Grip Bankdrücken',sets:'3',reps:'8-10',tags:['compound'],equip:'Langhantel + Flachbank',primary:['Trizeps'],secondary:['Brust','Schulter'],tipp:'Griffbreite schulterbreit. Ellbogen nah am Körper. Trizeps-Massebauer schlechthin.',yt:'https://www.youtube.com/results?search_query=close+grip+bench+press+tricep'},
-    {name:'French Press KH',sets:'3',reps:'10-12',tags:['iso'],equip:'Kurzhanteln/EZ-Stange',primary:['Trizeps (langer Kopf)'],secondary:[],tipp:'Liegend. Gewicht über dem Kopf. Ellbogen zeigen zur Decke. Wie Skull Crusher.',yt:'https://www.youtube.com/results?search_query=french+press+tricep+form'},
-    {name:'Trizeps Kickbacks KH',sets:'3',reps:'12-15',tags:['iso','glass'],equip:'Kurzhanteln',primary:['Trizeps (lateraler Kopf)'],secondary:[],tipp:'Oberkörper parallel zum Boden. Arm vollständig strecken. Kontraktion 1 Sek halten.',yt:'https://www.youtube.com/results?search_query=tricep+kickbacks+charles+glass'},
-    {name:'Reverse Grip Pushdown',sets:'3',reps:'15',tags:['cable','iso'],equip:'Kabelzug + Stange',primary:['Trizeps (medialer Kopf)'],secondary:[],tipp:'Untergriff am Kabel. Medialer Kopf wird betont. Ellbogen fest am Körper.',yt:'https://www.youtube.com/results?search_query=reverse+grip+tricep+pushdown'},
-    {name:'Diamond Push-Ups',sets:'3',reps:'12-15',tags:['compound'],equip:'Körpergewicht',primary:['Trizeps'],secondary:['Brust'],tipp:'Hände in Diamantform. Enger Griff maximiert Trizepsarbeit. Körper gerade halten.',yt:'https://www.youtube.com/results?search_query=diamond+push+ups+tricep+form'}
-  ],
-  Quads:[
-    {name:'Beinpresse (45°)',sets:'4',reps:'10-15',tags:['compound','machine'],equip:'45° Beinpresse',primary:['Quads'],secondary:['Gesäß','Hamstrings'],tipp:'Füße schulterbreit. Knie nie vollständig strecken. Sehr hohes Gewicht möglich bei guter Form.',yt:'https://www.youtube.com/results?search_query=leg+press+45+degree+form+technique'},
-    {name:'Kniebeugen (freie Stange)',sets:'4',reps:'6-10',tags:['compound'],equip:'Langhantel + Squat Rack',primary:['Quads','Gesäß'],secondary:['Hamstrings','Kern'],tipp:'Tief beugen. Knie über Zehen. Aufrechter Oberkörper für Quad-Fokus. Kontrolliertes Senken.',yt:'https://www.youtube.com/results?search_query=squat+form+technique+quads'},
-    {name:'Beinstrecker (Maschine)',sets:'3-4',reps:'12-15',tags:['iso','machine'],equip:'Beinstrecker-Maschine',primary:['Quads'],secondary:[],tipp:'Langsames Senken (3 Sek ekzentrisch). Fußspitze leicht gedreht für Außen-Quads.',yt:'https://www.youtube.com/results?search_query=leg+extension+machine+form+quads'},
-    {name:'Hackenschmidt Kniebeugen',sets:'3',reps:'10-12',tags:['machine','compound'],equip:'Hackenschmidt-Maschine',primary:['Quads'],secondary:['Gesäß'],tipp:'Hervorragend für Quads ohne Rückenbelastung. Füße tief auf der Plattform.',yt:'https://www.youtube.com/results?search_query=hack+squat+machine+form'},
-    {name:'Ausfallschritte (laufend)',sets:'3',reps:'12 pro Bein',tags:['compound'],equip:'Kurzhanteln / Körpergewicht',primary:['Quads','Gesäß'],secondary:['Hamstrings'],tipp:'Großer Schritt. Oberkörper aufrecht für Quad-Fokus. Knie berührt fast den Boden.',yt:'https://www.youtube.com/results?search_query=walking+lunges+form+quad+focus'},
-    {name:'Goblet Squat KH',sets:'3',reps:'12-15',tags:['compound'],equip:'Kurzhantel',primary:['Quads','Gesäß'],secondary:['Kern'],tipp:'KH vor der Brust. Sehr aufrechter Oberkörper. Tiefe Kniebeuge erzwungen. Super Aufwärmen.',yt:'https://www.youtube.com/results?search_query=goblet+squat+form+technique'},
-    {name:'Front Squat',sets:'3',reps:'6-8',tags:['compound'],equip:'Langhantel',primary:['Quads'],secondary:['Kern'],tipp:'Stange auf Schultern vorne. Extremer Quad-Fokus durch aufrechten Torso. Technisch anspruchsvoll.',yt:'https://www.youtube.com/results?search_query=front+squat+form+technique'},
-    {name:'Bulgarian Split Squat',sets:'3',reps:'10 pro Bein',tags:['compound'],equip:'Bank + Kurzhanteln',primary:['Quads','Gesäß'],secondary:['Hamstrings'],tipp:'Hinterer Fuß auf Bank. Sehr tiefes Senken. Exzellent für einseitige Kraft und Balance.',yt:'https://www.youtube.com/results?search_query=bulgarian+split+squat+form'},
-    {name:'Step-Ups mit KH',sets:'3',reps:'12 pro Bein',tags:['compound'],equip:'Box + Kurzhanteln',primary:['Quads','Gesäß'],secondary:[],tipp:'Box auf Kniehöhe. Volle Hüfterstreckung oben. Kontrolliertes Zurücksetzen.',yt:'https://www.youtube.com/results?search_query=step+ups+dumbbell+form'},
-    {name:'Sissy Squats',sets:'3',reps:'12-15',tags:['iso'],equip:'Körpergewicht / Maschine',primary:['Quads (Rectus Femoris)'],secondary:[],tipp:'Extreme Quad-Dehnung. Nur mit voller Beherrschung. Langsam und kontrolliert. Knie vorwärts.',yt:'https://www.youtube.com/results?search_query=sissy+squat+form+technique'}
-  ],
-  Hamstrings:[
-    {name:'Beinbeuger liegend (Maschine)',sets:'4',reps:'10-12',tags:['iso','machine'],equip:'Liegender Beinbeuger',primary:['Hamstrings'],secondary:['Waden'],tipp:'Hüfte bleibt auf Polster. Volle Streckung unten. Kontraktion 1 Sek oben halten.',yt:'https://www.youtube.com/results?search_query=lying+leg+curl+form+hamstrings'},
-    {name:'Rumänisches Kreuzheben KH',sets:'3-4',reps:'10-12',tags:['compound'],equip:'Kurzhanteln',primary:['Hamstrings','Gesäß'],secondary:['Unterer Rücken'],tipp:'Hüfte zurück schieben. Knie leicht gebeugt. Starkes Dehngefühl anstreben. Rücken GERADE.',yt:'https://www.youtube.com/results?search_query=romanian+deadlift+form+hamstrings'},
-    {name:'Beinbeuger sitzend (Maschine)',sets:'3',reps:'12-15',tags:['iso','machine'],equip:'Sitzender Beinbeuger',primary:['Hamstrings'],secondary:[],tipp:'Andere Kraftkurve als liegend. Gut für Variabilität und Kniegesundheit.',yt:'https://www.youtube.com/results?search_query=seated+leg+curl+form'},
-    {name:'Stiff-Leg Kreuzheben',sets:'3',reps:'10-12',tags:['compound'],equip:'Langhantel',primary:['Hamstrings'],secondary:['Gesäß','Unterer Rücken'],tipp:'Beine fast gestreckt. Maximale Dehnung unten anstreben. KEIN Rundrücken!',yt:'https://www.youtube.com/results?search_query=stiff+leg+deadlift+form'},
-    {name:'Nordic Hamstring Curls',sets:'3',reps:'5-8',tags:['compound'],equip:'Partner / Maschine',primary:['Hamstrings'],secondary:[],tipp:'Exzentrisch extrem anspruchsvoll. Reduziert Hamstring-Verletzungsrisiko erheblich. Langsam!',yt:'https://www.youtube.com/results?search_query=nordic+hamstring+curl+form'},
-    {name:'Good Mornings (Stange)',sets:'3',reps:'10-12',tags:['compound'],equip:'Langhantel',primary:['Hamstrings','Unterer Rücken'],secondary:['Gesäß'],tipp:'Stange auf Nacken. Hüfte als Scharnier. Rücken gerade. Dehnung in Hamstrings spüren.',yt:'https://www.youtube.com/results?search_query=good+mornings+form+technique'},
-    {name:'Sumo Deadlift',sets:'3',reps:'6-8',tags:['compound'],equip:'Langhantel',primary:['Hamstrings','Innenschenkel'],secondary:['Gesäß'],tipp:'Breiter Stand, Zehen nach außen. Mehr Innenschenkel und Gesäß als konventionell.',yt:'https://www.youtube.com/results?search_query=sumo+deadlift+form+technique'},
-    {name:'Glute-Ham Raise',sets:'3',reps:'8-10',tags:['compound'],equip:'GHD-Maschine',primary:['Hamstrings','Gesäß'],secondary:[],tipp:'Sehr anspruchsvoll für Hamstrings und Gesäß gleichzeitig. Kontrollierte Ausführung.',yt:'https://www.youtube.com/results?search_query=glute+ham+raise+form'},
-    {name:'Swiss Ball Hamstring Curl',sets:'3',reps:'12-15',tags:['iso'],equip:'Swiss Ball',primary:['Hamstrings'],secondary:['Gesäß','Kern'],tipp:'Instabile Oberfläche aktiviert mehr Stabilisatoren. Hüfte hoch halten. Langsam rollen.',yt:'https://www.youtube.com/results?search_query=swiss+ball+hamstring+curl+form'},
-    {name:'Einbeiniges RDL',sets:'3',reps:'10 pro Bein',tags:['compound'],equip:'Kurzhantel',primary:['Hamstrings','Gesäß'],secondary:['Balance'],tipp:'Beste unilaterale Hamstring-Übung. Knie des Standbeins leicht gebeugt. Hüfte gerade halten.',yt:'https://www.youtube.com/results?search_query=single+leg+romanian+deadlift+form'}
-  ],
-  Gesäß:[
-    {name:'Hip Thrusts (Stange)',sets:'4',reps:'10-15',tags:['compound'],equip:'Stange + Bank',primary:['Gesäß (Maximus)'],secondary:['Hamstrings'],tipp:'Schulterblätter auf Bank. Hüfte explodiert nach oben. Maximale Gluteus-Kontraktion oben halten.',yt:'https://www.youtube.com/results?search_query=barbell+hip+thrust+form+glutes'},
-    {name:'Glute Bridge (Boden)',sets:'3',reps:'15-20',tags:['iso'],equip:'Körpergewicht / Stange',primary:['Gesäß'],secondary:['Hamstrings'],tipp:'Einfachere Version des Hip Thrust. Gut für Aktivierung und Aufwärmen.',yt:'https://www.youtube.com/results?search_query=glute+bridge+form+technique'},
-    {name:'Donkey Kicks Kabel',sets:'3',reps:'15 pro Seite',tags:['cable','iso'],equip:'Kabel + Fußmanschette',primary:['Gesäß (Maximus)'],secondary:[],tipp:'Kabel am Knöchel. Gesäß nach hinten-oben drücken. Rücken gerade halten. Pause oben.',yt:'https://www.youtube.com/results?search_query=cable+kickback+glutes+form'},
-    {name:'Abduktionsmaschine',sets:'3',reps:'15-20',tags:['machine','iso'],equip:'Abduktions-Maschine',primary:['Gesäß (Medius)'],secondary:[],tipp:'Aufrecht = Gluteus Abduktoren. Gebeugt = Gluteus Medius mehr. Beide Positionen nutzen.',yt:'https://www.youtube.com/results?search_query=hip+abduction+machine+form+glutes'},
-    {name:'Einbeiniges RDL',sets:'3',reps:'10 pro Bein',tags:['compound'],equip:'Kurzhantel',primary:['Gesäß','Hamstrings'],secondary:['Balance'],tipp:'Beste unilaterale Gluteus-Übung. Standknie leicht gebeugt. Hüfte gerade halten.',yt:'https://www.youtube.com/results?search_query=single+leg+rdl+glute+focus'},
-    {name:'Cable Pull-Through',sets:'3',reps:'15-20',tags:['cable','iso'],equip:'Kabelzug unten',primary:['Gesäß','Hamstrings'],secondary:['Unterer Rücken'],tipp:'Kabel zwischen den Beinen. Hüfte als Scharnier vorwärts/rückwärts. Squeeze oben.',yt:'https://www.youtube.com/results?search_query=cable+pull+through+form+glutes'},
-    {name:'Bulgarian Split Squat (tief)',sets:'3',reps:'10 pro Bein',tags:['compound'],equip:'Kurzhanteln + Bank',primary:['Gesäß','Quads'],secondary:[],tipp:'Sehr tiefer Abstieg. Hinteres Knie fast den Boden. Maximale Gluteus-Aktivierung.',yt:'https://www.youtube.com/results?search_query=bulgarian+split+squat+deep+glutes'},
-    {name:'Step-Ups (hoch)',sets:'3',reps:'12 pro Bein',tags:['compound'],equip:'Hohe Box + Kurzhanteln',primary:['Gesäß','Quads'],secondary:[],tipp:'Hohe Box = mehr Hüfterstreckung = mehr Gluteus. Langsam und kontrolliert zurücksetzen.',yt:'https://www.youtube.com/results?search_query=high+step+ups+glute+activation'},
-    {name:'Banded Squat Walks',sets:'3',reps:'15 Schritte pro Seite',tags:['iso'],equip:'Widerstandsband',primary:['Gesäß (Medius)'],secondary:[],tipp:'Band über Knie. Seitliche Schritte in Kniebeuge-Position. Gluteus Medius wird gefeuert.',yt:'https://www.youtube.com/results?search_query=banded+lateral+walks+glute+medius'},
-    {name:'Reverse Hypers',sets:'3',reps:'15-20',tags:['iso'],equip:'Reverse Hyper Maschine',primary:['Gesäß','Unterer Rücken'],secondary:['Hamstrings'],tipp:'Spezialgerät. Optimal für Gesäß und unteren Rücken ohne Kompression der Wirbelsäule.',yt:'https://www.youtube.com/results?search_query=reverse+hyper+form+glutes'}
-  ],
-  Waden:[
-    {name:'Wadenheben stehend (Maschine)',sets:'4',reps:'12-15',tags:['machine','compound'],equip:'Stehende Wadenmaschine',primary:['Gastrocnemius'],secondary:['Soleus'],tipp:'Volle Streckung UND volle Beugung. Kurze Pause unten für maximale Dehnung. Gewicht progressiv.',yt:'https://www.youtube.com/results?search_query=standing+calf+raise+machine+form'},
-    {name:'Wadenheben sitzend',sets:'3-4',reps:'15-20',tags:['machine','iso'],equip:'Sitzende Wadenmaschine',primary:['Soleus'],secondary:[],tipp:'Sitzend = hauptsächlich Soleus! Kombiniere stehend + sitzend für vollständige Wadenentwicklung.',yt:'https://www.youtube.com/results?search_query=seated+calf+raise+form+soleus'},
-    {name:'Einbeiniges Wadenheben',sets:'3',reps:'15 pro Bein',tags:['iso'],equip:'Stufe / Kurzhantel',primary:['Gastrocnemius'],secondary:[],tipp:'Unilateral für mehr Kraft und Balance. KH in eine Hand. Maximale ROM nutzen.',yt:'https://www.youtube.com/results?search_query=single+leg+calf+raise+form'},
-    {name:'Wadenheben an Beinpresse',sets:'3',reps:'15-20',tags:['machine','compound'],equip:'Beinpresse',primary:['Gastrocnemius','Soleus'],secondary:[],tipp:'Füße unten auf Platte. Sicher und schwer. Volle Streckung ohne Knieüberstreckung.',yt:'https://www.youtube.com/results?search_query=calf+press+leg+press+machine'},
-    {name:'Donkey Calf Raises',sets:'3',reps:'15-20',tags:['compound'],equip:'Spezialmaschine / Partner',primary:['Gastrocnemius'],secondary:[],tipp:'Maximale Dehnung durch gebeugte Hüfte. Klassik Bodybuilder-Übung. Sehr effektiv.',yt:'https://www.youtube.com/results?search_query=donkey+calf+raises+form'},
-    {name:'Tibialis Raises',sets:'3',reps:'15-20',tags:['iso'],equip:'Widerstandsband / Maschine',primary:['Tibialis Anterior'],secondary:[],tipp:'Gegenmuskel der Waden! Schienbeingesundheit und verbesserte Balance. Fußheber.',yt:'https://www.youtube.com/results?search_query=tibialis+raises+shin+health'},
-    {name:'Box Jumps',sets:'3',reps:'10',tags:['compound'],equip:'Sprungbox',primary:['Waden','Quads','Gesäß'],secondary:[],tipp:'Explosive Kraft für Waden und Beinkette. Weich landen durch Kniebeugen. Sicher.',yt:'https://www.youtube.com/results?search_query=box+jumps+form+landing'},
-    {name:'Jump Rope (Springseil)',sets:'3',reps:'60 Sek',tags:['compound'],equip:'Springseil',primary:['Waden'],secondary:['Kondition'],tipp:'Exzellente Wadenbelastung + Kondition. Auf Fußballen springen. Geringes Verletzungsrisiko.',yt:'https://www.youtube.com/results?search_query=jump+rope+calf+workout'},
-    {name:'Seated Calf (freies Gewicht)',sets:'3',reps:'15-20',tags:['iso'],equip:'Bank + Gewichtsscheiben',primary:['Soleus'],secondary:[],tipp:'Gewichtsplatte auf Knien. Tiefe Dehnung essentiell. Alternativ zu Maschine.',yt:'https://www.youtube.com/results?search_query=seated+calf+raise+barbell+form'},
-    {name:'Calf Raise (Stufe, einbeinig)',sets:'3',reps:'20 pro Bein',tags:['iso'],equip:'Treppe / Stufe',primary:['Gastrocnemius'],secondary:[],tipp:'Körpergewicht an Geländer. Maximale ROM durch tiefes Absenken. Überall machbar.',yt:'https://www.youtube.com/results?search_query=stair+calf+raise+form'}
-  ],
-  Bauch:[
-    {name:'Kabelcrunches kniend',sets:'3-4',reps:'15-20',tags:['cable','iso'],equip:'Kabelzug + Seil',primary:['Rectus Abdominis'],secondary:[],tipp:'Hüfte als Drehpunkt. Rücken runden. Gewicht progressiv steigern für Wachstum.',yt:'https://www.youtube.com/results?search_query=cable+crunch+form+abs'},
-    {name:'Hängende Beinheber',sets:'3',reps:'12-15',tags:['compound'],equip:'Klimmzugstange / Arm-Stütze',primary:['Unterer Bauch','Hüftbeuger'],secondary:['Kern'],tipp:'Beine gestreckt oder gebeugt. Hüfte einrollen am Ende für volle Kontraktion.',yt:'https://www.youtube.com/results?search_query=hanging+leg+raises+form'},
-    {name:'Maschinen-Crunches',sets:'3',reps:'15-20',tags:['machine','iso'],equip:'Crunch-Maschine',primary:['Rectus Abdominis'],secondary:[],tipp:'Gewicht = progressives Overloading! Langsames Rückwärtsbewegen. Schulter bleibt gebogen.',yt:'https://www.youtube.com/results?search_query=machine+crunch+abs+form'},
-    {name:'AB Wheel Rollouts',sets:'3',reps:'8-12',tags:['compound'],equip:'AB Wheel',primary:['Gesamter Kern'],secondary:['Unterer Rücken'],tipp:'Extrem effektiv. Rücken gerade halten! Erst kurze, dann längere Rollouts. Langsam.',yt:'https://www.youtube.com/results?search_query=ab+wheel+rollout+form'},
-    {name:'Plank (Unterarmstütz)',sets:'3',reps:'30-60 Sek',tags:['iso'],equip:'Körpergewicht',primary:['Transversus','Kern'],secondary:[],tipp:'Becken neutral. Gesäß nicht hochziehen. Gleichmäßig atmen. Kern isometrisch maximal.',yt:'https://www.youtube.com/results?search_query=plank+form+core+technique'},
-    {name:'Russian Twists (mit Gewicht)',sets:'3',reps:'20 total',tags:['iso'],equip:'Gewichtsscheibe / KH',primary:['Obliques'],secondary:['Kern'],tipp:'Füße angehoben für mehr Schwierigkeit. Oberkörper rotiert, nicht die Arme.',yt:'https://www.youtube.com/results?search_query=russian+twists+weighted+form'},
-    {name:'V-Ups',sets:'3',reps:'12-15',tags:['compound'],equip:'Körpergewicht',primary:['Gesamter Bauch'],secondary:[],tipp:'Gleichzeitig Beine und Oberkörper anheben. Hände und Füße treffen sich oben.',yt:'https://www.youtube.com/results?search_query=v+ups+abs+form'},
-    {name:'Seitliche Crunches',sets:'3',reps:'15 pro Seite',tags:['iso'],equip:'Körpergewicht',primary:['Obliques'],secondary:[],tipp:'Schulter diagonal zur gegenüber Hüfte. Für definierten seitlichen Bauch.',yt:'https://www.youtube.com/results?search_query=side+crunch+oblique+form'},
-    {name:'Dragon Flags',sets:'3',reps:'6-8',tags:['compound'],equip:'Bank / Stange',primary:['Gesamter Kern'],secondary:['Unterer Rücken'],tipp:'Fortgeschrittene Übung. Körper wie ein Brett hoch und runter. Extrem anspruchsvoll.',yt:'https://www.youtube.com/results?search_query=dragon+flag+bruce+lee+form'},
-    {name:'Dead Bug',sets:'3',reps:'10 pro Seite',tags:['iso'],equip:'Körpergewicht',primary:['Transversus Abdominis'],secondary:['Kern'],tipp:'Rücken flach auf Boden pressen. Gegenarm/-bein strecken. Anti-Extension Kern.',yt:'https://www.youtube.com/results?search_query=dead+bug+exercise+core+form'}
-  ]
-};
-
-// ═══════════════════════════════════════════════════════════
-// TRAINING PLAN
-// ═══════════════════════════════════════════════════════════
-const PLAN = [
-  {id:'upper_a',label:'OBEN A',day:'MO',sub:'OBERKÖRPER',
-   muscles:['Brust','Rücken','Schulter','Bizeps','Trizeps'],
-   glassNote:'Jede Muskelgruppe einmal. Brust raus, Schulterblätter zusammen. Volle ROM bei Brust + Rücken. Arme am Ende ausreizen.'},
-  {id:'lower_a',label:'UNTEN A',day:'DI',sub:'UNTERKÖRPER',
-   muscles:['Quads','Hamstrings','Gesäß','Waden'],
-   glassNote:'Quads und hintere Kette gleichmäßig. Jede Kniebeuge tief ausführen. Waden niemals vernachlässigen.'},
-  {id:'upper_b',label:'OBEN B',day:'DO',sub:'FOKUS BRUST',
-   muscles:['Brust','Rücken','Schulter','Trizeps','Bizeps'],
-   glassNote:'Zweiter Oberkörpertag. Brust-Fokus. Variiere die Übungsreihenfolge für neue Reize.'},
-  {id:'lower_b',label:'UNTEN B',day:'FR',sub:'UNTERKÖRPER',
-   muscles:['Hamstrings','Quads','Gesäß','Waden','Bauch'],
-   glassNote:'Hinteren Körper priorisieren. Die meisten trainieren Vorderes zu viel. Bauch am Ende.'}
+const DEFAULT_MEAL_PLAN = [
+{ id: 1, slot: “Frühstück”,     time: “07:00”, icon: “🌅”, color: “#FFF8E1”, accent: “#F59E0B” },
+{ id: 2, slot: “Vormittags”,    time: “10:00”, icon: “🍼”, color: “#E3F2FD”, accent: “#1E88E5” },
+{ id: 3, slot: “Mittag”,        time: “12:30”, icon: “🥣”, color: “#E8F5E9”, accent: “#43A047” },
+{ id: 4, slot: “Nachmittags”,   time: “15:30”, icon: “🍌”, color: “#EDE7F6”, accent: “#7B1FA2” },
+{ id: 5, slot: “Abendmahlzeit”, time: “18:00”, icon: “🌙”, color: “#E3F2FD”, accent: “#1565C0” },
 ];
 
-// ═══════════════════════════════════════════════════════════
-// STATE
-// ═══════════════════════════════════════════════════════════
-let libState = {muscle:null,day:null};
-let libTmp = [];
-let globalTimerInterval = null;
-let globalTimerSecs = 0;
-let globalTimerRunning = false;
-let setTimers = {};
-let bodyChartInst = null;
-let currentPhotoFilter = 'all';
+const FOOD_TYPES = [
+{ label: “Stillen”,      icon: “🤱”, color: “#FEE2E2” },
+{ label: “Flasche”,      icon: “🍼”, color: “#DBEAFE” },
+{ label: “Brei”,         icon: “🥣”, color: “#D1FAE5” },
+{ label: “Obst/Gemüse”, icon: “🥕”, color: “#FEF3C7” },
+{ label: “Snack”,        icon: “🍪”, color: “#EDE9FE” },
+{ label: “Wasser”,       icon: “💧”, color: “#CFFAFE” },
+{ label: “Sonstiges”,    icon: “🍽”, color: “#F3F4F6” },
+];
 
-// ═══════════════════════════════════════════════════════════
-// INIT
-// ═══════════════════════════════════════════════════════════
-window.addEventListener('load', () => {
-  const bar = document.getElementById('spBar');
-  setTimeout(() => bar.style.width='100%', 100);
-  setTimeout(() => {
-    document.getElementById('splash').classList.add('hide');
-    init();
-  }, 1700);
-});
+export default function BabyTracker() {
+const [activeTab, setActiveTab]   = useState(0);
+const [babyName,  setBabyName]    = useState(“Naim”);
+const [babyBD,    setBabyBD]      = useState(“2025-07-15”);
+const [showSetup, setShowSetup]   = useState(false);
 
-function init(){
-  document.getElementById('wkNum').textContent = D.week;
-  renderWeekStrip();
-  renderDayTabs();
-  renderWorkout();
+const [mealPlan,    setMealPlan]    = useState(DEFAULT_MEAL_PLAN);
+const [editingSlot, setEditingSlot] = useState(null);
+const [showAddSlot, setShowAddSlot] = useState(false);
+const [newSlotForm, setNewSlotForm] = useState({ slot: “”, time: “08:00”, icon: “🍼” });
+
+const [foodLog,      setFoodLog]    = useState([
+{ id:1, time:Date.now()-7200000,  type:“Stillen”,    amount:””,  duration:20, slot:“Vormittags”,    note:”” },
+{ id:2, time:Date.now()-14400000, type:“Flasche”,    amount:150, duration:””, slot:“Frühstück”,     note:”” },
+{ id:3, time:Date.now()-21600000, type:“Brei”,       amount:80,  duration:””, slot:“Mittag”,        note:“Apfel-Birne” },
+{ id:4, time:Date.now()-25200000, type:“Obst/Gemüse”,amount:50,  duration:””, slot:“Nachmittags”,   note:“Banane” },
+{ id:5, time:Date.now()-32400000, type:“Flasche”,    amount:150, duration:””, slot:“Abendmahlzeit”, note:”” },
+]);
+const [foodForm,     setFoodForm]   = useState({ type:“Stillen”, amount:””, duration:””, slot:””, note:”” });
+const [showFoodForm, setShowFoodForm]= useState(false);
+const [prefillSlot,  setPrefillSlot]= useState(null);
+
+const [sleepLog,     setSleepLog]   = useState([
+{ id:1, start:Date.now()-28800000, end:Date.now()-21600000, quality:“gut”,   note:“Durchgeschlafen” },
+{ id:2, start:Date.now()-10800000, end:Date.now()-7200000,  quality:“mittel”,note:“2x aufgewacht” },
+]);
+const [sleepActive,  setSleepActive] = useState(false);
+const [sleepStart,   setSleepStart]  = useState(null);
+const [sleepElapsed, setSleepElapsed]= useState(0);
+const [bedtimeAlert, setBedtimeAlert]= useState(“19:30”);
+const [alertEnabled, setAlertEnabled]= useState(true);
+const [showBedModal, setShowBedModal]= useState(false);
+
+const [photos,       setPhotos]      = useState([
+{ id:1, month:1, url:null, caption:“Monat 1 – Willkommen auf der Welt, Naim! 🌍”, date:“2025-08-15” },
+]);
+const [showPhotoForm, setShowPhotoForm]  = useState(false);
+const [photoCaption,  setPhotoCaption]   = useState(””);
+const [selPhotoMonth, setSelPhotoMonth]  = useState(1);
+const fileRef = useRef(null);
+const [photoPreview,  setPhotoPreview]   = useState(null);
+
+const [medLog,     setMedLog]   = useState([
+{ id:1, name:“Vitamin D”, dose:“500 IE”, time:Date.now()-86400000, recurring:“täglich”, note:“1 Tropfen” },
+]);
+const [medForm,    setMedForm]  = useState({ name:””, dose:””, recurring:””, note:”” });
+const [showMedForm,setShowMedForm]= useState(false);
+
+const [growthLog,    setGrowthLog]    = useState([
+{ id:1, date:“2025-07-15”, weight:3400, height:51, headCirc:34, note:“Geburt 🎉” },
+]);
+const [growthForm,   setGrowthForm]   = useState({ date:new Date().toISOString().split(“T”)[0], weight:””, height:””, headCirc:””, note:”” });
+const [showGrowthForm,setShowGrowthForm]= useState(false);
+
+useEffect(() => {
+let iv; if (sleepActive) iv = setInterval(()=>setSleepElapsed(Date.now()-sleepStart),1000);
+return ()=>clearInterval(iv);
+},[sleepActive,sleepStart]);
+
+useEffect(() => {
+if (!alertEnabled) return;
+const iv = setInterval(()=>{
+const now=new Date(); const [h,m]=bedtimeAlert.split(”:”).map(Number);
+if(now.getHours()===h&&now.getMinutes()===m){
+if(Notification.permission===“granted”) new Notification(`🌙 Schlafenszeit für ${babyName}!`,{body:`Es ist ${bedtimeAlert} Uhr!`});
+else setShowBedModal(true);
 }
+},60000);
+return ()=>clearInterval(iv);
+},[alertEnabled,bedtimeAlert,babyName]);
 
-// ═══════════════════════════════════════════════════════════
-// WEEK STRIP
-// ═══════════════════════════════════════════════════════════
-function renderWeekStrip(){
-  let h='';
-  for(let w=1;w<=D.totalWeeks;w++){
-    const isDe=D.deloadWeeks.includes(w);
-    const isDone=w<D.week;
-    const isAct=w===D.week;
-    let cls='w-btn';
-    if(isAct) cls+=' active';
-    else if(isDone) cls+=' done';
-    if(isDe) cls+=' deload';
-    h+=`<div class="${cls}" onclick="pickWeek(${w})">${isDe?'D':w}</div>`;
-  }
-  document.getElementById('weekStrip').innerHTML=h;
-  const isDe=D.deloadWeeks.includes(D.week);
-  const wi=document.getElementById('weekInfo');
-  wi.textContent=isDe?`⚡ WOCHE ${D.week} — DELOAD · 50% Volumen · Aktive Erholung`
-    :`📅 WOCHE ${D.week} / ${D.totalWeeks} · ${PLAN[D.day].label}`;
-  wi.className='week-info'+(isDe?' deload':'');
-}
-function pickWeek(w){D.week=w;document.getElementById('wkNum').textContent=w;save();renderWeekStrip();renderWorkout();}
+const ageMonths = () => Math.max(0,Math.floor((Date.now()-new Date(babyBD))/(30.44*86400000)));
+const ageDays   = () => Math.max(0,Math.floor((Date.now()-new Date(babyBD))/86400000));
 
-// ═══════════════════════════════════════════════════════════
-// DAY TABS
-// ═══════════════════════════════════════════════════════════
-function renderDayTabs(){
-  let h='';
-  PLAN.forEach((p,i)=>{
-    const key=`${D.week}_${i}`;
-    const done=D.completedDays[key];
-    const isAct=i===D.day;
-    const mCount=p.muscles.length;
-    let dots='';
-    for(let d=0;d<mCount;d++) dots+=`<div class="dot${done?' done':''}"></div>`;
-    h+=`<div class="day-tab${isAct?' active':''}" onclick="pickDay(${i})">
-      <div class="day-tab-day">${p.day}</div>
-      <div class="day-tab-name">${p.label}</div>
-      <div class="day-tab-sub">${p.sub}</div>
-      <div class="day-dots">${dots}</div>
-    </div>`;
-  });
-  document.getElementById('dayTabs').innerHTML=h;
-}
-function pickDay(i){D.day=i;save();renderDayTabs();renderWorkout();}
+const addFood = () => {
+if (!foodForm.type) return;
+setFoodLog([{ id:Date.now(), time:Date.now(), …foodForm }, …foodLog]);
+setFoodForm({ type:“Stillen”, amount:””, duration:””, slot:””, note:”” });
+setShowFoodForm(false); setPrefillSlot(null);
+};
+const toggleSleep = () => {
+if (!sleepActive){ setSleepStart(Date.now()); setSleepActive(true); }
+else { setSleepLog([{id:Date.now(),start:sleepStart,end:Date.now(),quality:“gut”,note:””},…sleepLog]); setSleepActive(false); setSleepElapsed(0); }
+};
+const addMed = () => {
+if (!medForm.name) return;
+setMedLog([{id:Date.now(),time:Date.now(),…medForm},…medLog]);
+setMedForm({name:””,dose:””,recurring:””,note:””}); setShowMedForm(false);
+};
+const addGrowth = () => {
+setGrowthLog([…growthLog,{id:Date.now(),…growthForm}].sort((a,b)=>new Date(a.date)-new Date(b.date)));
+setGrowthForm({date:new Date().toISOString().split(“T”)[0],weight:””,height:””,headCirc:””,note:””}); setShowGrowthForm(false);
+};
+const handlePhoto = (e) => {
+const f=e.target.files[0];
+if(f){ const r=new FileReader(); r.onload=ev=>setPhotoPreview(ev.target.result); r.readAsDataURL(f); }
+};
+const addPhoto = () => {
+setPhotos([…photos,{id:Date.now(),month:selPhotoMonth,url:photoPreview,caption:photoCaption,date:new Date().toISOString().split(“T”)[0]}]);
+setPhotoCaption(””); setPhotoPreview(null); setShowPhotoForm(false);
+};
+const requestNotif = async () => { if(“Notification” in window) await Notification.requestPermission(); setShowBedModal(false); };
 
-// ═══════════════════════════════════════════════════════════
-// WORKOUT RENDER
-// ═══════════════════════════════════════════════════════════
-function getActiveEx(muscle, dayIdx){
-  const key=`${muscle}_${dayIdx}`;
-  const sel=D.sel[key];
-  const lib=LIB[muscle]||[];
-  if(!sel||sel.length===0) return lib.slice(0,3);
-  return sel.map(i=>lib[i]).filter(Boolean);
-}
+const openFoodForSlot = (slot) => {
+setPrefillSlot(slot);
+setFoodForm({type:“Stillen”,amount:””,duration:””,slot:slot.slot,note:””});
+setShowFoodForm(true);
+};
+const saveSlotEdit = () => { setMealPlan(mealPlan.map(s=>s.id===editingSlot.id?editingSlot:s)); setEditingSlot(null); };
+const addNewSlot = () => {
+if(!newSlotForm.slot) return;
+setMealPlan([…mealPlan,{id:Date.now(),…newSlotForm,color:”#E3F2FD”,accent:”#1E88E5”}]);
+setNewSlotForm({slot:””,time:“08:00”,icon:“🍼”}); setShowAddSlot(false);
+};
+const removeSlot = (id) => setMealPlan(mealPlan.filter(s=>s.id!==id));
 
-function renderWorkout(){
-  const plan=PLAN[D.day];
-  const isDe=D.deloadWeeks.includes(D.week);
-  const dayKey=`${D.week}_${D.day}`;
-  const isDone=D.completedDays[dayKey];
+const todayFood  = foodLog.filter(f=>new Date(f.time).toDateString()===new Date().toDateString());
+const todaySleep = sleepLog.filter(s=>new Date(s.start).toDateString()===new Date().toDateString());
+const totalSleep = todaySleep.reduce((a,s)=>a+(s.end-s.start),0);
+const latestG    = growthLog[growthLog.length-1];
 
-  let h='';
+const TABS=[{icon:“🏠”,label:“Home”},{icon:“🍽”,label:“Mahlzeiten”},{icon:“😴”,label:“Schlaf”},{icon:“📸”,label:“Fotos”},{icon:“💊”,label:“Medizin”},{icon:“📏”,label:“Wachstum”}];
 
-  // Day header
-  h+=`<div class="day-hdr-card">
-    <div class="day-hdr-left">
-      <div class="day-status${isDone?' done':''}"></div>
-      <div class="day-hdr-title">${plan.day} — ${plan.sub}</div>
-    </div>
-    <div class="day-hdr-right">
-      <div class="btn-sm active-btn" onclick="openPhotosByDay(${D.day})">📸 Fotos</div>
-    </div>
-  </div>`;
+return (
+<div style={{fontFamily:”‘Nunito’,sans-serif”,background:”#F0F7FF”,minHeight:“100vh”,maxWidth:480,margin:“0 auto”,paddingBottom:84}}>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>{`*{box-sizing:border-box;margin:0;padding:0} @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}} .card{background:#fff;border-radius:20px;padding:16px;margin:10px 14px;box-shadow:0 2px 12px rgba(33,150,243,.10);animation:fadeUp .25s ease} .input{width:100%;padding:11px 14px;border:2px solid #DCEEFB;border-radius:12px;font-family:'Nunito',sans-serif;font-size:13px;color:#1a2e4a;background:#fff;outline:none} .input:focus{border-color:#1E88E5} .btn-p{background:linear-gradient(135deg,#1E88E5,#00ACC1);color:#fff;border:none;border-radius:14px;padding:13px 20px;font-family:'Nunito',sans-serif;font-weight:800;font-size:14px;cursor:pointer;width:100%} .fab{position:fixed;bottom:88px;right:18px;width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,#1E88E5,#00ACC1);border:none;color:#fff;font-size:28px;cursor:pointer;box-shadow:0 4px 18px rgba(33,150,243,.45);display:flex;align-items:center;justify-content:center;z-index:100} .overlay{position:fixed;inset:0;background:rgba(10,30,60,.45);z-index:200;display:flex;align-items:flex-end;justify-content:center} .modal{background:#fff;border-radius:28px 28px 0 0;padding:26px 20px;width:100%;max-width:480px;animation:fadeUp .22s ease;max-height:90vh;overflow-y:auto} .sec{font-size:16px;font-weight:900;color:#1a2e4a;margin:14px 14px 6px} .tag{display:inline-block;padding:3px 9px;border-radius:99px;font-size:11px;font-weight:700} .tabbar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:#fff;display:flex;border-top:1.5px solid #DCEEFB;z-index:50;padding-bottom:env(safe-area-inset-bottom);box-shadow:0 -3px 16px rgba(33,150,243,.09)} .tabbtn{flex:1;display:flex;flex-direction:column;align-items:center;padding:8px 2px 6px;cursor:pointer;gap:2px;border:none;background:none;font-family:'Nunito',sans-serif} .chip{display:inline-flex;align-items:center;gap:4px;padding:5px 11px;border-radius:99px;font-size:12px;font-weight:700;cursor:pointer;border:2px solid transparent;font-family:'Nunito',sans-serif} .slot-card{border-radius:18px;padding:14px;margin:0 14px 10px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 10px rgba(33,150,243,.08);animation:fadeUp .25s ease}`}</style>
 
-  // Deload
-  if(isDe) h+=`<div class="deload-banner">
-    <div class="deload-title">⚡ DELOAD WOCHE</div>
-    <div class="deload-text">Reduziere Gewicht 40-50%. Gleiche Übungen und Wiederholungen. Kein PR-Versuch – aktive Erholung!</div>
-  </div>`;
-
-  // Glass note
-  h+=`<div class="glass-note" style="margin:10px 16px 0">
-    <div class="glass-note-title">💬 CHARLES GLASS — ${plan.sub}</div>
-    <div class="glass-note-text">${plan.glassNote}</div>
-  </div>`;
-
-  // Heatmap
-  h+=renderHeatmap(plan, D.week, D.day);
-
-  // Muscles
-  plan.muscles.forEach(muscle=>{
-    const exercises=getActiveEx(muscle, D.day);
-    h+=`<div class="muscle-section">
-      <div class="muscle-hdr">
-        <div class="muscle-name">${muscle.toUpperCase()}</div>
-        <div class="muscle-cnt">${exercises.length} Übung${exercises.length!==1?'en':''}</div>
-        <div class="btn-lib" onclick="openLib('${muscle}',${D.day})">📚 BIBLIOTHEK</div>
-      </div>`;
-    if(exercises.length===0){
-      h+=`<div style="background:var(--dark3);border:1px dashed rgba(201,168,76,.2);border-radius:10px;padding:18px;text-align:center;font-family:'Space Mono',monospace;font-size:9px;color:var(--muted)">Keine Übungen aktiv · Bibliothek öffnen ↑</div>`;
-    } else {
-      exercises.forEach((ex,idx)=>{h+=buildExCard(ex,idx,muscle,D.day,D.week);});
-    }
-    h+=`</div>`;
-  });
-
-  // Complete
-  h+=`<div class="complete-btn${isDone?' done':''}" onclick="completeDay()">${isDone?'✅ TRAINING ABGESCHLOSSEN':'🏁 TRAINING ABSCHLIESSEN'}</div>`;
-
-  document.getElementById('workoutScroll').innerHTML=h;
-}
-
-function renderHeatmap(plan, week, dayIdx){
-  const muscles=plan.muscles;
-  let maxVol=1;
-  const vols={};
-  muscles.forEach(m=>{
-    const exs=getActiveEx(m,dayIdx);
-    let vol=0;
-    exs.forEach(ex=>{
-      const sets=parseInt(ex.sets.split('-')[0])||3;
-      for(let s=0;s<sets;s++){
-        const k=`${week}_${dayIdx}_${ex.name}_${s}`;
-        const l=D.logs[k]||{};
-        vol+=(l.kg||0)*(l.reps||0);
-      }
-    });
-    vols[m]=vol;
-    if(vol>maxVol) maxVol=vol;
-  });
-
-  let h=`<div class="heatmap-section">
-    <div class="heatmap-title">🔥 MUSKEL-HEATMAP <span style="font-family:'Space Mono',monospace;font-size:8px;color:var(--muted)">Woche ${week} · Trainingsvolumen</span></div>
-    <div class="heatmap-grid">`;
-  muscles.forEach(m=>{
-    const vol=vols[m];
-    const pct=maxVol>0?(vol/maxVol*100):0;
-    const col=pct>70?'var(--green)':pct>30?'var(--gold)':'rgba(201,168,76,.3)';
-    h+=`<div class="heatmap-item">
-      <div class="heatmap-muscle" style="font-size:12px">${m}</div>
-      <div class="heatmap-bar-wrap"><div class="heatmap-bar" style="width:${pct}%;background:${col}"></div></div>
-      <div class="heatmap-vol">${vol>0?(vol/1000).toFixed(1)+'t':'–'}</div>
-    </div>`;
-  });
-  h+=`</div></div>`;
-  return h;
-}
-
-function buildExCard(ex, idx, muscle, dayIdx, week){
-  const exKey=`${week}_${dayIdx}_${ex.name}`;
-  const safeKey=exKey.replace(/[^a-z0-9]/gi,'_');
-  const done=D.exDone&&D.exDone[exKey];
-  const sets=parseInt(ex.sets.split('-')[0])||3;
-  const tagsH=ex.tags.map(t=>`<span class="tag tag-${t}">${t}</span>`).join('');
-  const pri=ex.primary||[];
-  const sec=ex.secondary||[];
-
-  // Best leistung
-  const pr=D.prs[ex.name];
-  const suggest=pr?`${pr.kg}kg`:'—';
-  const suggestDesc=pr?`Best: ${pr.kg}kg × ${pr.reps} Wdh`:'Noch kein Log';
-
-  // Log rows
-  let logH='';
-  for(let s=0;s<sets;s++){
-    const lk=`${exKey}_${s}`;
-    const l=D.logs[lk]||{};
-    const isPR=l.kg&&l.reps&&pr&&(l.kg*l.reps)>=(pr.vol||0);
-    logH+=`<div class="log-row">
-      <div class="log-set-num">S${s+1}</div>
-      <input class="log-inp${isPR?' pr-inp':''}" type="number" inputmode="decimal" placeholder="kg" value="${l.kg||''}"
-        onchange="logSet('${lk}','kg',this.value,'${ex.name}','${safeKey}')">
-      <input class="log-inp" type="number" inputmode="numeric" placeholder="Wdh" value="${l.reps||''}"
-        onchange="logSet('${lk}','reps',this.value,'${ex.name}','${safeKey}')">
-      <div class="log-chk${l.done?' done':''}" onclick="doneSet('${lk}','${ex.name}')"></div>
-    </div>`;
-  }
-
-  // Per-exercise history chart placeholder
-  const histData=getExHistory(ex.name);
-
-  return `<div class="ex-card${done?' done-card':''}" id="ec_${safeKey}">
-    <div class="ex-hdr">
-      <div class="ex-num">${String(idx+1).padStart(2,'0')}</div>
-      <div class="ex-info" onclick="toggleEx('${safeKey}')">
-        <div class="ex-name">${ex.name}</div>
-        <div class="ex-meta">${ex.sets} Sätze · ${ex.reps} Wdh · ${ex.equip||''}</div>
-        <div class="ex-tags">${tagsH}</div>
-      </div>
-      <div class="ex-btns">
-        <div class="ex-check${done?' done':''}" onclick="checkEx('${exKey}')"></div>
-        <div class="ex-toggle" id="et_${safeKey}" onclick="toggleEx('${safeKey}')">+</div>
-      </div>
-    </div>
-    <div class="ex-detail" id="ed_${safeKey}">
-
-      <!-- Weight suggest -->
-      <div class="weight-suggest">
-        <div class="ws-left">
-          <div class="ws-icon">📊</div>
-          <div class="ws-info">
-            <div class="ws-label">VORSCHLAG FÜR DIESE WOCHE</div>
-            <div class="ws-desc">${suggestDesc}</div>
-          </div>
-        </div>
-        <div>
-          <div class="ws-val">${suggest}</div>
-          <div class="ws-unit">kg</div>
-        </div>
-      </div>
-
-      <!-- Muscle info -->
-      <div class="muscle-info-box">
-        <div class="mib-title">💪 MUSKELN</div>
-        ${pri.length?`<div class="mib-sub">HAUPTMUSKELN</div><div class="mib-primary">${pri.map(m=>`<span class="mib-tag primary">${m}</span>`).join('')}</div>`:''}
-        ${sec.length?`<div class="mib-sub" style="margin-top:6px">UNTERSTÜTZEND</div><div class="mib-secondary">${sec.map(m=>`<span class="mib-tag secondary">${m}</span>`).join('')}</div>`:''}
-      </div>
-
-      <!-- Glass tip -->
-      <div class="glass-tip">
-        <div class="glass-tip-lbl">🎯 Charles Glass Tipp:</div>
-        <div class="glass-tip-txt">${ex.tipp}</div>
-      </div>
-
-      <!-- YouTube -->
-      <a class="btn-yt" href="${ex.yt}" target="_blank">▶ VIDEO ANSEHEN</a>
-
-      <!-- Log -->
-      <div class="log-section">
-        <div class="log-top">
-          <div class="log-lbl">TRAININGSLOG — WOCHE ${week}</div>
-          <div class="timer-btn" id="tmr_${safeKey}" onclick="toggleSetTimer('${safeKey}')">⏱ START</div>
-        </div>
-        <div class="log-grid-hdr"><div>#</div><div>GEWICHT</div><div>WDH</div><div>✓</div></div>
-        ${logH}
-        <div class="pr-flash" id="prf_${safeKey}"></div>
-        <div class="log-clear" onclick="clearLog('${exKey}','${safeKey}')">× LOG LÖSCHEN</div>
-      </div>
-
-      <!-- Best Leistung -->
-      ${pr?`<div class="best-box">
-        <div class="best-box-lbl">🏆 BEST LEISTUNG</div>
-        <div class="best-metrics">
-          <div class="best-metric">
-            <div class="best-metric-lbl">MAX KG</div>
-            <div class="best-metric-val gold">${pr.kg}</div>
-            <div class="best-metric-unit">kg</div>
-          </div>
-          <div class="best-metric">
-            <div class="best-metric-lbl">MAX REPS</div>
-            <div class="best-metric-val purple">${pr.reps}</div>
-            <div class="best-metric-unit">Wdh</div>
-          </div>
-          <div class="best-metric">
-            <div class="best-metric-lbl">MAX VOL</div>
-            <div class="best-metric-val green">${pr.vol}</div>
-            <div class="best-metric-unit">kg×reps</div>
-          </div>
-        </div>
-        <div style="font-family:'Space Mono',monospace;font-size:8px;color:var(--muted);margin-top:8px;text-align:center">Erreicht: W${pr.week||'?'} · ${pr.date||'–'}</div>
-      </div>`:''}
-
-      <!-- Progress chart -->
-      ${histData.length>=2?`<div class="ex-chart-wrap">
-        <div class="ex-chart-tabs">
-          <div class="ex-chart-tab active" onclick="switchExChart('${safeKey}','vol',this)">Volumen</div>
-          <div class="ex-chart-tab" onclick="switchExChart('${safeKey}','kg',this)">Max kg</div>
-        </div>
-        <div class="ex-chart-inner"><canvas id="ch_${safeKey}"></canvas></div>
-      </div>`:''}
-    </div>
-  </div>`;
-}
-
-// ═══════════════════════════════════════════════════════════
-// LOG FUNCTIONS
-// ═══════════════════════════════════════════════════════════
-function logSet(lk, field, val, exName, safeKey){
-  if(!D.logs[lk]) D.logs[lk]={};
-  D.logs[lk][field]=parseFloat(val)||0;
-  const l=D.logs[lk];
-  if(l.kg&&l.reps){
-    const vol=l.kg*l.reps;
-    const pr=D.prs[exName];
-    if(!pr||vol>pr.vol){
-      D.prs[exName]={kg:l.kg,reps:l.reps,vol,date:new Date().toLocaleDateString('de-DE'),week:D.week};
-      const badge=document.getElementById('prf_'+safeKey);
-      if(badge){badge.textContent=`🏆 NEUER PR! ${l.kg}kg × ${l.reps} = ${vol} Vol`;badge.classList.add('show');}
-      toast(`🏆 PR! ${exName}: ${l.kg}kg × ${l.reps}`);
-    }
-  }
-  save();
-}
-
-function doneSet(lk, exName){
-  if(!D.logs[lk]) D.logs[lk]={};
-  D.logs[lk].done=!D.logs[lk].done;
-  if(D.logs[lk].done) toast('✓ Satz! Rest-Timer gestartet →');
-  save();
-  renderWorkout();
-}
-
-function checkEx(exKey){
-  if(!D.exDone) D.exDone={};
-  D.exDone[exKey]=!D.exDone[exKey];
-  save();
-  const safeKey=exKey.replace(/[^a-z0-9]/gi,'_');
-  const card=document.getElementById('ec_'+safeKey);
-  const chk=card&&card.querySelector('.ex-check');
-  if(chk) chk.classList.toggle('done',D.exDone[exKey]);
-  if(card) card.classList.toggle('done-card',D.exDone[exKey]);
-}
-
-function toggleEx(safeKey){
-  const det=document.getElementById('ed_'+safeKey);
-  const tog=document.getElementById('et_'+safeKey);
-  if(!det||!tog) return;
-  const open=det.classList.toggle('open');
-  tog.classList.toggle('open',open);
-  if(open){
-    // init chart after open
-    setTimeout(()=>initExChart(safeKey,'vol'),100);
-  }
-}
-
-function clearLog(exKey, safeKey){
-  const sets=4;
-  for(let s=0;s<sets;s++) delete D.logs[`${exKey}_${s}`];
-  save();
-  renderWorkout();
-}
-
-function getExHistory(exName){
-  const results=[];
-  // search all history
-  D.history.forEach(h=>{
-    const e=h.entries.filter(e=>e.ex===exName);
-    if(e.length>0){
-      const maxKg=Math.max(...e.map(x=>x.kg||0));
-      const vol=e.reduce((s,x)=>(x.kg||0)*(x.reps||0)+s,0);
-      results.push({week:h.week,kg:maxKg,vol});
-    }
-  });
-  return results;
-}
-
-function initExChart(safeKey, mode){
-  // find exercise name from safeKey not ideal, use stored data approach
-  const canvas=document.getElementById('ch_'+safeKey);
-  if(!canvas) return;
-  // get all PR history for this key
-  // simplified: show placeholder data from history
-  const ctx=canvas.getContext('2d');
-  if(canvas._chart) canvas._chart.destroy();
-  // Find ex name by looking through current workout
-  let exName=null;
-  PLAN[D.day].muscles.forEach(m=>{
-    getActiveEx(m,D.day).forEach(ex=>{
-      const k=`${D.week}_${D.day}_${ex.name}`.replace(/[^a-z0-9]/gi,'_');
-      if(k===safeKey) exName=ex.name;
-    });
-  });
-  if(!exName) return;
-  const hist=getExHistory(exName);
-  if(hist.length<2) return;
-  const labels=hist.map(h=>'W'+h.week);
-  const data=hist.map(h=>mode==='vol'?h.vol:h.kg);
-  canvas._chart=new Chart(ctx,{
-    type:'line',
-    data:{labels,datasets:[{data,borderColor:'#C9A84C',backgroundColor:'rgba(201,168,76,.1)',tension:.4,pointRadius:4}]},
-    options:{
-      responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false}},
-      scales:{
-        x:{ticks:{color:'#6B6457',font:{family:'Space Mono',size:8}},grid:{color:'rgba(255,255,255,.04)'}},
-        y:{ticks:{color:'#C9A84C',font:{family:'Space Mono',size:8}},grid:{color:'rgba(255,255,255,.04)'}}
-      }
-    }
-  });
-}
-
-function switchExChart(safeKey, mode, el){
-  document.querySelectorAll(`#ch_${safeKey}`).forEach(c=>c&&c._chart&&c._chart.destroy());
-  el.closest('.ex-chart-tabs').querySelectorAll('.ex-chart-tab').forEach(t=>t.classList.remove('active'));
-  el.classList.add('active');
-  setTimeout(()=>initExChart(safeKey,mode),50);
-}
-
-// ═══════════════════════════════════════════════════════════
-// TIMER
-// ═══════════════════════════════════════════════════════════
-function toggleSetTimer(safeKey){
-  const btn=document.getElementById('tmr_'+safeKey);
-  if(!btn) return;
-  if(setTimers[safeKey]){
-    clearInterval(setTimers[safeKey]);
-    delete setTimers[safeKey];
-    btn.textContent='⏱ START';
-    btn.classList.remove('running');
-  } else {
-    let s=0;
-    setTimers[safeKey]=setInterval(()=>{
-      s++;
-      const m=Math.floor(s/60),sec=s%60;
-      btn.textContent=`${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
-    },1000);
-    btn.classList.add('running');
-  }
-}
-
-function toggleGlobalTimer(){
-  const btn=document.getElementById('globalTimer');
-  if(globalTimerRunning){
-    clearInterval(globalTimerInterval);
-    globalTimerRunning=false;
-    btn.textContent='▶ START';
-    btn.classList.remove('running');
-    globalTimerSecs=0;
-  } else {
-    globalTimerRunning=true;
-    btn.classList.add('running');
-    globalTimerInterval=setInterval(()=>{
-      globalTimerSecs++;
-      const h=Math.floor(globalTimerSecs/3600),m=Math.floor((globalTimerSecs%3600)/60),s=globalTimerSecs%60;
-      btn.textContent=h>0?`${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-    },1000);
-  }
-}
-
-// ═══════════════════════════════════════════════════════════
-// COMPLETE DAY
-// ═══════════════════════════════════════════════════════════
-function completeDay(){
-  const plan=PLAN[D.day];
-  const dayKey=`${D.week}_${D.day}`;
-  D.completedDays[dayKey]=true;
-  const entries=[];
-  plan.muscles.forEach(m=>{
-    getActiveEx(m,D.day).forEach(ex=>{
-      const sets=parseInt(ex.sets.split('-')[0])||3;
-      for(let s=0;s<sets;s++){
-        const l=D.logs[`${D.week}_${D.day}_${ex.name}_${s}`]||{};
-        if(l.kg) entries.push({ex:ex.name,set:s+1,kg:l.kg,reps:l.reps||0});
-      }
-    });
-  });
-  if(entries.length>0){
-    D.history.push({date:new Date().toLocaleDateString('de-DE'),week:D.week,day:D.day,dayLabel:plan.label,entries});
-  }
-  save();
-  renderDayTabs();
-  renderWorkout();
-  toast(`${plan.label} abgeschlossen! 💪🏾`);
-}
-
-// ═══════════════════════════════════════════════════════════
-// LIBRARY MODAL
-// ═══════════════════════════════════════════════════════════
-function openLib(muscle, dayIdx){
-  libState={muscle,day:dayIdx};
-  const key=`${muscle}_${dayIdx}`;
-  libTmp=[...(D.sel[key]||[0,1,2])];
-  document.getElementById('libTitle').textContent=`${muscle.toUpperCase()} BIBLIOTHEK`;
-  document.getElementById('libSub').textContent=`${PLAN[dayIdx].label} · ${muscle} · Wähle deine Übungen`;
-  renderLibBody();
-  document.getElementById('libModal').classList.add('open');
-}
-function renderLibBody(){
-  const lib=LIB[libState.muscle]||[];
-  let h='';
-  lib.forEach((ex,i)=>{
-    const on=libTmp.includes(i);
-    const tags=ex.tags.map(t=>`<span class="tag tag-${t}">${t}</span>`).join('');
-    h+=`<div class="lib-item${on?' on':''}" onclick="toggleLibItem(${i})">
-      <div class="lib-chk">${on?'✓':''}</div>
+```
+  {/* HEADER */}
+  <div style={{background:"linear-gradient(135deg,#1565C0 0%,#00ACC1 100%)",padding:"22px 16px 30px",color:"#fff",position:"relative",overflow:"hidden"}}>
+    <div style={{position:"absolute",top:-30,right:-20,width:130,height:130,background:"rgba(255,255,255,.09)",borderRadius:"50%"}}/>
+    <div style={{position:"absolute",bottom:-25,left:-15,width:90,height:90,background:"rgba(255,255,255,.06)",borderRadius:"50%"}}/>
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
       <div>
-        <div class="lib-item-name">${ex.name}</div>
-        <div class="lib-item-meta">${ex.sets} Sätze · ${ex.reps} Wdh · ${ex.equip||''}</div>
-        <div class="lib-item-tags">${tags}</div>
-      </div>
-    </div>`;
-  });
-  document.getElementById('libBody').innerHTML=h;
-  document.getElementById('libCount').innerHTML=`<strong>${libTmp.length}</strong> aktive Übungen`;
-}
-function toggleLibItem(i){
-  const idx=libTmp.indexOf(i);
-  if(idx>-1){if(libTmp.length<=1){toast('Mindestens 1 Übung!');return;}libTmp.splice(idx,1);}
-  else{libTmp.push(i);libTmp.sort((a,b)=>a-b);}
-  renderLibBody();
-}
-function saveLib(){
-  const key=`${libState.muscle}_${libState.day}`;
-  D.sel[key]=[...libTmp];
-  save();
-  closeLib();
-  renderWorkout();
-  toast(`${libState.muscle}: ${libTmp.length} Übungen gespeichert ✓`);
-}
-function closeLib(){document.getElementById('libModal').classList.remove('open');}
-
-// ═══════════════════════════════════════════════════════════
-// SCREEN SWITCH
-// ═══════════════════════════════════════════════════════════
-const SCREENS=['Workout','Stats','Body','Photos','Tools'];
-function switchScreen(i){
-  SCREENS.forEach((s,j)=>{
-    document.getElementById('s'+s).classList.toggle('active',j===i);
-    document.getElementById('nav'+j).classList.toggle('active',j===i);
-  });
-  if(i===1) renderStats();
-  if(i===2) renderBodyScreen();
-  if(i===3) renderPhotos();
-  if(i===4) renderTools();
-}
-
-// ═══════════════════════════════════════════════════════════
-// STATS
-// ═══════════════════════════════════════════════════════════
-function renderStats(){
-  const totalSets=Object.values(D.logs).filter(l=>l.done).length;
-  const totalVol=Object.values(D.logs).reduce((a,l)=>a+(l.kg||0)*(l.reps||0),0);
-  const daysComp=Object.keys(D.completedDays).length;
-  const prCount=Object.keys(D.prs).length;
-
-  let h=`<div class="stats-card" style="margin-top:16px">
-    <div class="stats-card-title">📊 ÜBERSICHT</div>
-    <div class="stat-grid-3">
-      <div class="stat-mini"><div class="stat-mini-lbl">Sessions</div><div class="stat-mini-val">${daysComp}</div><div class="stat-mini-unit">abgeschlossen</div></div>
-      <div class="stat-mini"><div class="stat-mini-lbl">Volumen</div><div class="stat-mini-val blue">${(totalVol/1000).toFixed(1)}</div><div class="stat-mini-unit">Tonnen</div></div>
-      <div class="stat-mini"><div class="stat-mini-lbl">PRs</div><div class="stat-mini-val green">${prCount}</div><div class="stat-mini-unit">Records</div></div>
-    </div>
-    <div class="stat-grid-2">
-      <div class="stat-mini"><div class="stat-mini-lbl">Sätze ✓</div><div class="stat-mini-val">${totalSets}</div></div>
-      <div class="stat-mini"><div class="stat-mini-lbl">Woche</div><div class="stat-mini-val purple">${D.week}/${D.totalWeeks}</div></div>
-    </div>
-  </div>`;
-
-  // PRs
-  if(prCount>0){
-    h+=`<div class="stats-card"><div class="stats-card-title">🏆 PERSONAL RECORDS</div>`;
-    Object.entries(D.prs).sort((a,b)=>b[1].vol-a[1].vol).slice(0,10).forEach(([name,pr])=>{
-      h+=`<div class="pr-list-item">
-        <div class="pr-item-left">
-          <div class="pr-item-name">${name}</div>
-          <div class="pr-item-date">W${pr.week||'?'} · ${pr.date||'–'}</div>
+        <div style={{fontSize:12,opacity:.85,fontWeight:600}}>{new Date().toLocaleDateString("de-DE",{weekday:"long",day:"numeric",month:"long"})}</div>
+        <div style={{fontSize:30,fontWeight:900,margin:"6px 0 2px"}}>👦 {babyName}</div>
+        <div style={{fontSize:13,opacity:.9}}>
+          {ageMonths()>0?`${ageMonths()} Monate & ${ageDays()%30} Tage alt 💙`:`${ageDays()} Tage alt 💙`}
         </div>
-        <div class="pr-item-right">
-          <div class="pr-item-kg">${pr.kg}kg</div>
-          <div class="pr-item-reps">${pr.reps} Wdh</div>
+      </div>
+      <button onClick={()=>setShowSetup(true)} style={{background:"rgba(255,255,255,.2)",border:"none",color:"#fff",borderRadius:12,padding:"8px 13px",cursor:"pointer",fontSize:13,fontWeight:700,fontFamily:"Nunito"}}>✏️ Einst.</button>
+    </div>
+    <div style={{display:"flex",gap:9,marginTop:16}}>
+      {[
+        {val:todayFood.length,   lab:"Mahlzeiten 🍼"},
+        {val:totalSleep>0?formatDuration(totalSleep):"—",lab:"Schlaf 😴"},
+        {val:latestG?`${(latestG.weight/1000).toFixed(2)}kg`:"—",lab:"Gewicht ⚖️"},
+      ].map((s,i)=>(
+        <div key={i} style={{flex:1,background:"rgba(255,255,255,.18)",borderRadius:14,padding:"10px 10px"}}>
+          <div style={{fontSize:19,fontWeight:900}}>{s.val}</div>
+          <div style={{fontSize:10,opacity:.85,fontWeight:700,marginTop:2}}>{s.lab}</div>
         </div>
-      </div>`;
-    });
-    h+=`</div>`;
-  }
-
-  // Week overview
-  h+=`<div class="stats-card"><div class="stats-card-title">📅 WOCHENÜBERSICHT</div><div class="week-grid">`;
-  for(let w=1;w<=D.totalWeeks;w++){
-    const done=[0,1,2,3].filter(d=>D.completedDays[`${w}_${d}`]).length;
-    const isDe=D.deloadWeeks.includes(w);
-    const isCur=w===D.week;
-    const isFullDone=done>=4;
-    h+=`<div class="week-cell${isFullDone?' done-week':''}${isCur?' cur-week':''}">
-      <div class="week-cell-lbl">${isDe?'D':('W'+w)}</div>
-      <div class="week-cell-val">${done}/4</div>
-    </div>`;
-  }
-  h+=`</div></div>`;
-
-  // Backup
-  h+=`<div class="backup-row">
-    <div class="btn-backup" onclick="exportBackup()">💾 EXPORT</div>
-    <div class="btn-backup" onclick="importBackup()">📥 IMPORT</div>
-    <div class="btn-backup danger" onclick="resetAll()">🔄 RESET</div>
-  </div>`;
-
-  document.getElementById('statsScroll').innerHTML=h;
-}
-
-// ═══════════════════════════════════════════════════════════
-// BODY SCREEN
-// ═══════════════════════════════════════════════════════════
-function renderBodyScreen(){
-  const entries=D.body.entries||[];
-  const latest=entries[entries.length-1]||{};
-  const first=entries[0]||{};
-  const dW=latest.g&&first.g?(latest.g-first.g).toFixed(1):'—';
-  const dK=latest.k&&first.k?(latest.k-first.k).toFixed(1):'—';
-
-  let h=`<div class="stats-card" style="margin-top:16px">
-    <div class="stats-card-title">📏 KÖRPERMESSUNG</div>
-    <div style="font-family:'Space Mono',monospace;font-size:9px;color:var(--muted);margin-bottom:12px;letter-spacing:1px">HEUTE EINTRAGEN — ${new Date().toLocaleDateString('de-DE')}</div>
-    <div class="body-inputs">
-      <div class="body-inp-group">
-        <div class="body-inp-lbl">GEWICHT (KG)</div>
-        <input class="body-inp" type="number" inputmode="decimal" step="0.1" placeholder="z.B. 85.5" id="bInpG">
-        <div class="body-inp-unit">kg</div>
-      </div>
-      <div class="body-inp-group">
-        <div class="body-inp-lbl">KÖRPERFETT (%)</div>
-        <input class="body-inp" type="number" inputmode="decimal" step="0.1" placeholder="z.B. 15.0" id="bInpK">
-        <div class="body-inp-unit">%</div>
-      </div>
+      ))}
     </div>
-    <button class="btn-save" onclick="saveBodyEntry()">SPEICHERN</button>`;
+  </div>
 
-  if(entries.length>=2){
-    h+=`<div class="stat-grid-2">
-      <div class="stat-mini"><div class="stat-mini-lbl">GEWICHT Δ</div><div class="stat-mini-val${parseFloat(dW)<0?' green':''}">${dW>0?'+':''}${dW}</div><div class="stat-mini-unit">kg seit Start</div></div>
-      <div class="stat-mini"><div class="stat-mini-lbl">KÖRPERFETT Δ</div><div class="stat-mini-val purple">${dK>0?'+':''}${dK}</div><div class="stat-mini-unit">% seit Start</div></div>
-    </div>`;
-  }
-  h+=`</div>`;
+  {activeTab===0&&<HomeTab foodLog={foodLog} sleepLog={sleepLog} medLog={medLog} growthLog={growthLog} bedtimeAlert={bedtimeAlert} alertEnabled={alertEnabled} setAlertEnabled={setAlertEnabled} setBedtimeAlert={setBedtimeAlert} setActiveTab={setActiveTab}/>}
+  {activeTab===1&&<MealTab mealPlan={mealPlan} foodLog={foodLog} setFoodLog={setFoodLog} openFoodForSlot={openFoodForSlot} removeSlot={removeSlot} setEditingSlot={setEditingSlot} showAddSlot={showAddSlot} setShowAddSlot={setShowAddSlot} newSlotForm={newSlotForm} setNewSlotForm={setNewSlotForm} addNewSlot={addNewSlot}/>}
+  {activeTab===2&&<SleepTab sleepLog={sleepLog} setSleepLog={setSleepLog} sleepActive={sleepActive} sleepElapsed={sleepElapsed} toggleSleep={toggleSleep} bedtimeAlert={bedtimeAlert} setBedtimeAlert={setBedtimeAlert} alertEnabled={alertEnabled} setAlertEnabled={setAlertEnabled} requestNotif={requestNotif}/>}
+  {activeTab===3&&<PhotoTab photos={photos} setPhotos={setPhotos} showPhotoForm={showPhotoForm} setShowPhotoForm={setShowPhotoForm} photoCaption={photoCaption} setPhotoCaption={setPhotoCaption} selPhotoMonth={selPhotoMonth} setSelPhotoMonth={setSelPhotoMonth} fileRef={fileRef} handlePhoto={handlePhoto} photoPreview={photoPreview} addPhoto={addPhoto} babyBD={babyBD}/>}
+  {activeTab===4&&<MedTab medLog={medLog} setMedLog={setMedLog} showMedForm={showMedForm} setShowMedForm={setShowMedForm} medForm={medForm} setMedForm={setMedForm} addMed={addMed}/>}
+  {activeTab===5&&<GrowthTab growthLog={growthLog} setGrowthLog={setGrowthLog} showGrowthForm={showGrowthForm} setShowGrowthForm={setShowGrowthForm} growthForm={growthForm} setGrowthForm={setGrowthForm} addGrowth={addGrowth}/>}
 
-  if(entries.length>=2){
-    h+=`<div class="stats-card">
-      <div class="stats-card-title">📈 VERLAUF</div>
-      <div class="chart-h200"><canvas id="bodyChart"></canvas></div>
-      <div style="display:flex;gap:16px;font-family:'Space Mono',monospace;font-size:8px;color:var(--muted);padding-top:8px;border-top:1px solid rgba(255,255,255,.04)">
-        <span>— <span style="color:var(--gold)">Gewicht kg (links)</span></span>
-        <span>- - <span style="color:var(--purple)">Körperfett % (rechts)</span></span>
-      </div>
-    </div>`;
-  }
+  {/* TABBAR */}
+  <div className="tabbar">
+    {TABS.map((t,i)=>(
+      <button key={i} className="tabbtn" onClick={()=>setActiveTab(i)} style={{color:activeTab===i?"#1565C0":"#90A4AE"}}>
+        <span style={{fontSize:21}}>{t.icon}</span>
+        <span style={{fontSize:9,fontWeight:800}}>{t.label}</span>
+        {activeTab===i&&<div style={{width:4,height:4,borderRadius:"50%",background:"#1565C0"}}/>}
+      </button>
+    ))}
+  </div>
 
-  if(entries.length>0){
-    h+=`<div class="stats-card"><div class="stats-card-title">📋 VERLAUF (${entries.length} EINTRÄGE)</div>`;
-    [...entries].reverse().slice(0,15).forEach(e=>{
-      h+=`<div class="history-row">
-        <div class="history-date">${e.date}</div>
-        <div class="history-vals">
-          <div class="history-val"><div class="history-val-num" style="color:var(--gold)">${e.g}</div><div class="history-val-unit">kg</div></div>
-          <div class="history-val"><div class="history-val-num" style="color:var(--purple)">${e.k}</div><div class="history-val-unit">% KFA</div></div>
+  {/* FOOD MODAL */}
+  {showFoodForm&&(
+    <div className="overlay" onClick={()=>{setShowFoodForm(false);setPrefillSlot(null);}}>
+      <div className="modal" onClick={e=>e.stopPropagation()}>
+        <div style={{fontSize:18,fontWeight:900,marginBottom:4}}>🍼 Mahlzeit eintragen</div>
+        {prefillSlot&&<div style={{fontSize:12,color:"#42A5F5",fontWeight:700,marginBottom:12}}>Slot: {prefillSlot.icon} {prefillSlot.slot} · {prefillSlot.time} Uhr</div>}
+        <div style={{display:"flex",flexWrap:"wrap",gap:7,marginBottom:14}}>
+          {FOOD_TYPES.map(ft=>(
+            <button key={ft.label} className="chip" onClick={()=>setFoodForm({...foodForm,type:ft.label})}
+              style={{background:foodForm.type===ft.label?ft.color:"#F8FAFC",borderColor:foodForm.type===ft.label?"#1E88E5":"transparent",color:foodForm.type===ft.label?"#1565C0":"#607D8B"}}>
+              {ft.icon} {ft.label}
+            </button>
+          ))}
         </div>
-      </div>`;
-    });
-    h+=`</div>`;
-  }
-
-  document.getElementById('bodyScroll').innerHTML=h;
-
-  if(entries.length>=2){
-    requestAnimationFrame(()=>{
-      const ctx=document.getElementById('bodyChart');
-      if(!ctx) return;
-      if(bodyChartInst) bodyChartInst.destroy();
-      bodyChartInst=new Chart(ctx,{
-        type:'line',
-        data:{
-          labels:entries.map(e=>e.date.substring(0,5)),
-          datasets:[
-            {label:'Gewicht',data:entries.map(e=>e.g),borderColor:'#C9A84C',backgroundColor:'rgba(201,168,76,.1)',tension:.4,yAxisID:'y'},
-            {label:'KFA',data:entries.map(e=>e.k),borderColor:'#9B6EC9',backgroundColor:'rgba(155,110,201,.08)',tension:.4,borderDash:[4,4],yAxisID:'y1'}
-          ]
-        },
-        options:{
-          responsive:true,maintainAspectRatio:false,
-          interaction:{mode:'index',intersect:false},
-          plugins:{legend:{display:false}},
-          scales:{
-            x:{ticks:{color:'#6B6457',font:{family:'Space Mono',size:8}},grid:{color:'rgba(255,255,255,.04)'}},
-            y:{ticks:{color:'#C9A84C',font:{family:'Space Mono',size:8}},grid:{color:'rgba(255,255,255,.04)'}},
-            y1:{position:'right',ticks:{color:'#9B6EC9',font:{family:'Space Mono',size:8}},grid:{display:false}}
-          }
-        }
-      });
-    });
-  }
-}
-
-function saveBodyEntry(){
-  const g=parseFloat(document.getElementById('bInpG').value);
-  const k=parseFloat(document.getElementById('bInpK').value);
-  if(!g){toast('Gewicht eingeben!');return;}
-  D.body.entries.push({date:new Date().toLocaleDateString('de-DE'),g,k:k||0,week:D.week});
-  save();
-  renderBodyScreen();
-  toast('Körperdaten gespeichert ✓');
-}
-
-// ═══════════════════════════════════════════════════════════
-// PHOTOS
-// ═══════════════════════════════════════════════════════════
-document.getElementById('photoInput').addEventListener('change', function(e){
-  Array.from(e.target.files).forEach(file=>{
-    const reader=new FileReader();
-    reader.onload=ev=>{
-      D.photos.push({
-        data:ev.target.result,
-        date:new Date().toLocaleDateString('de-DE'),
-        time:new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}),
-        week:D.week, day:D.day,
-        dayLabel:PLAN[D.day].label
-      });
-      save();
-      renderPhotos();
-    };
-    reader.readAsDataURL(file);
-  });
-  this.value='';
-});
-
-function openPhotosByDay(dayIdx){
-  switchScreen(3);
-  currentPhotoFilter='day_'+dayIdx;
-  renderPhotos();
-}
-
-function renderPhotos(){
-  // Filter bar
-  const weeks=[...new Set(D.photos.map(p=>p.week))].sort((a,b)=>a-b);
-  let filterH=`<div class="pf-btn${currentPhotoFilter==='all'?' active':''}" onclick="filterPhotos('all')">Alle (${D.photos.length})</div>`;
-  weeks.forEach(w=>{
-    const cnt=D.photos.filter(p=>p.week===w).length;
-    filterH+=`<div class="pf-btn${currentPhotoFilter==='week_'+w?' active':''}" onclick="filterPhotos('week_${w}')">Woche ${w} (${cnt})</div>`;
-  });
-  PLAN.forEach((p,i)=>{
-    const cnt=D.photos.filter(ph=>ph.day===i).length;
-    if(cnt>0) filterH+=`<div class="pf-btn${currentPhotoFilter==='day_'+i?' active':''}" onclick="filterPhotos('day_${i}')">${p.label} (${cnt})</div>`;
-  });
-  document.getElementById('photoFilterBar').innerHTML=filterH;
-
-  // Grid
-  let photos=D.photos;
-  if(currentPhotoFilter==='all'){}
-  else if(currentPhotoFilter.startsWith('week_')){
-    const w=parseInt(currentPhotoFilter.replace('week_',''));
-    photos=photos.filter(p=>p.week===w);
-  } else if(currentPhotoFilter.startsWith('day_')){
-    const d=parseInt(currentPhotoFilter.replace('day_',''));
-    photos=photos.filter(p=>p.day===d);
-  }
-
-  const grid=document.getElementById('photoGrid');
-  if(photos.length===0){
-    grid.innerHTML=`<div class="photo-empty">📸 Noch keine Fotos<br>Tippe oben um Fotos hinzuzufügen<br><br>📅 ${currentPhotoFilter==='all'?'Alle Wochen':'Kein Foto für diesen Filter'}</div>`;
-    return;
-  }
-  grid.innerHTML=[...photos].reverse().map((p,i)=>{
-    const realIdx=D.photos.length-1-i;
-    return `<div class="photo-item">
-      <img src="${p.data}" loading="lazy">
-      <div class="photo-del" onclick="deletePhoto(${realIdx})">×</div>
-      <div class="photo-wk-badge">W${p.week}</div>
-      <div class="photo-date">${p.dayLabel} · ${p.date} ${p.time}</div>
-    </div>`;
-  }).join('');
-}
-
-function filterPhotos(f){currentPhotoFilter=f;renderPhotos();}
-function deletePhoto(i){D.photos.splice(i,1);save();renderPhotos();}
-
-// ═══════════════════════════════════════════════════════════
-// TOOLS
-// ═══════════════════════════════════════════════════════════
-function renderTools(){
-  document.getElementById('toolsScroll').innerHTML=`
-    <div class="tool-card" style="margin-top:16px">
-      <div class="tool-title">🏋🏾 1RM RECHNER</div>
-      <div class="tool-desc">EPLEY FORMEL: 1RM = KG × (1 + REPS/30)</div>
-      <div class="tool-row">
-        <input class="tool-inp" type="number" inputmode="decimal" placeholder="Gewicht (kg)" id="rm_kg">
-        <input class="tool-inp" type="number" inputmode="numeric" placeholder="Wiederh." id="rm_reps">
-        <div class="btn-calc" onclick="calc1RM()">→</div>
-      </div>
-      <div id="rm_res" style="display:none" class="tool-result">
-        <div class="tool-result-val" id="rm_val"></div>
-        <div class="tool-result-sub" id="rm_sub"></div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
+          <div>
+            <label style={{fontSize:11,fontWeight:700,color:"#90A4AE",display:"block",marginBottom:4}}>Menge (ml)</label>
+            <input className="input" type="number" placeholder="z.B. 150" value={foodForm.amount} onChange={e=>setFoodForm({...foodForm,amount:e.target.value})}/>
+          </div>
+          <div>
+            <label style={{fontSize:11,fontWeight:700,color:"#90A4AE",display:"block",marginBottom:4}}>Dauer (Min)</label>
+            <input className="input" type="number" placeholder="z.B. 20" value={foodForm.duration} onChange={e=>setFoodForm({...foodForm,duration:e.target.value})}/>
+          </div>
+        </div>
+        <input className="input" placeholder="Notiz (optional)" value={foodForm.note} onChange={e=>setFoodForm({...foodForm,note:e.target.value})} style={{marginBottom:14}}/>
+        <button className="btn-p" onClick={addFood}>Speichern ✓</button>
       </div>
     </div>
+  )}
 
-    <div class="tool-card">
-      <div class="tool-title">🥩 MAKRO RECHNER</div>
-      <div class="tool-desc">TDEE BERECHNUNG · MIFFLIN-ST JEOR</div>
-      <div class="tool-row">
-        <input class="tool-inp" type="number" inputmode="decimal" placeholder="Gewicht kg" id="mc_kg">
-        <input class="tool-inp" type="number" inputmode="decimal" placeholder="KFA %" id="mc_kfa">
-      </div>
-      <div class="tool-row">
-        <select class="tool-select" id="mc_goal"><option value="cut">🔻 Cut (-300)</option><option value="main" selected>⚖️ Maintain</option><option value="bulk">📈 Bulk (+300)</option></select>
-        <select class="tool-select" id="mc_act"><option value="1.375">Leicht aktiv</option><option value="1.55" selected>Moderat</option><option value="1.725">Sehr aktiv</option></select>
-      </div>
-      <button class="btn-calc-full" onclick="calcMacros()">BERECHNEN</button>
-      <div id="mc_res" style="display:none" class="tool-result">
-        <div class="tool-result-val" id="mc_kcal"></div>
-        <div class="tool-result-sub" id="mc_sub"></div>
+  {/* SLOT EDIT MODAL */}
+  {editingSlot&&(
+    <div className="overlay" onClick={()=>setEditingSlot(null)}>
+      <div className="modal" onClick={e=>e.stopPropagation()}>
+        <div style={{fontSize:18,fontWeight:900,marginBottom:14}}>✏️ Slot bearbeiten</div>
+        <div style={{display:"flex",flexDirection:"column",gap:10}}>
+          <input className="input" placeholder="Name" value={editingSlot.slot} onChange={e=>setEditingSlot({...editingSlot,slot:e.target.value})}/>
+          <input className="input" type="time" value={editingSlot.time} onChange={e=>setEditingSlot({...editingSlot,time:e.target.value})}/>
+          <input className="input" placeholder="Emoji (z.B. 🍼)" value={editingSlot.icon} onChange={e=>setEditingSlot({...editingSlot,icon:e.target.value})} maxLength={4}/>
+          <button className="btn-p" onClick={saveSlotEdit}>Speichern ✓</button>
+        </div>
       </div>
     </div>
+  )}
 
-    <div class="tool-card">
-      <div class="tool-title">💊 SUPPLEMENT STACK</div>
-      <div class="tool-desc">EVIDENCE-BASED PRIORITÄT</div>
-      ${[
-        ['🔵','Kreatin Monohydrat','5g täglich, immer, Timing egal','Stärkste Evidenz aller Supplements. Pflicht.'],
-        ['🟡','Protein (Gesamt)','1.8–2.2g/kg KG täglich','Gesamtprotein > Timing. Ziel zuerst!'],
-        ['🟠','Citrullin Malat','6–8g 30min pre-workout','Pump + Ausdauer nachweislich erhöht.'],
-        ['🔴','Beta-Alanin','3.2g täglich (Split-Dosis)','Kribbeln normal! Muskelausdauer +.'],
-        ['🟣','Vitamin D3 + K2','2000–5000 IU D3 täglich','Essenziell für Muskelkraft + Immunsystem.'],
-        ['⚪','Magnesium (Glycinat)','300–400mg abends','Schlafqualität + Regeneration stark verbessert.'],
-        ['🔶','Zink','15–25mg abends','Testosteron + Immunsystem + Schlaf.'],
-        ['🩵','Omega-3 Fettsäuren','2–3g EPA+DHA täglich','Entzündung ↓ · Herzgesundheit + Gelenke.']
-      ].map(([icon,name,dose,note])=>`<div class="supp-item">
-        <div class="supp-name">${icon} ${name}</div>
-        <div class="supp-dose">${dose}</div>
-        <div class="supp-note">${note}</div>
-      </div>`).join('')}
+  {/* SETUP */}
+  {showSetup&&(
+    <div className="overlay" onClick={()=>setShowSetup(false)}>
+      <div className="modal" onClick={e=>e.stopPropagation()}>
+        <div style={{fontSize:18,fontWeight:900,marginBottom:14}}>👦 Baby einrichten</div>
+        <div style={{display:"flex",flexDirection:"column",gap:10}}>
+          <input className="input" value={babyName} onChange={e=>setBabyName(e.target.value)} placeholder="Name"/>
+          <input className="input" type="date" value={babyBD} onChange={e=>setBabyBD(e.target.value)}/>
+          <button className="btn-p" onClick={()=>setShowSetup(false)}>Speichern ✓</button>
+        </div>
+      </div>
     </div>
-  `;
+  )}
+
+  {/* BEDTIME MODAL */}
+  {showBedModal&&(
+    <div className="overlay">
+      <div className="modal" style={{textAlign:"center"}}>
+        <div style={{fontSize:42,marginBottom:8}}>🌙</div>
+        <div style={{fontSize:18,fontWeight:900}}>Schlafenszeit-Erinnerung</div>
+        <div style={{fontSize:13,color:"#90A4AE",margin:"10px 0 18px"}}>Erlaube Benachrichtigungen für Naims Schlafenszeit</div>
+        <button className="btn-p" onClick={requestNotif}>Erlauben 🔔</button>
+        <button onClick={()=>setShowBedModal(false)} style={{marginTop:10,background:"none",border:"none",color:"#B0BEC5",fontFamily:"Nunito",fontSize:13,cursor:"pointer",width:"100%"}}>Später</button>
+      </div>
+    </div>
+  )}
+</div>
+```
+
+);
 }
 
-function calc1RM(){
-  const kg=parseFloat(document.getElementById('rm_kg').value);
-  const reps=parseInt(document.getElementById('rm_reps').value);
-  if(!kg||!reps){toast('Gewicht & Wdh eingeben!');return;}
-  const rm=kg*(1+reps/30);
-  document.getElementById('rm_val').textContent=rm.toFixed(1)+' kg';
-  document.getElementById('rm_sub').innerHTML=
-    `90% = ${(rm*.9).toFixed(1)}kg &nbsp; 80% = ${(rm*.8).toFixed(1)}kg &nbsp; 70% = ${(rm*.7).toFixed(1)}kg<br>
-     60% = ${(rm*.6).toFixed(1)}kg &nbsp; 50% = ${(rm*.5).toFixed(1)}kg`;
-  document.getElementById('rm_res').style.display='block';
+function HomeTab({ foodLog, sleepLog, medLog, growthLog, bedtimeAlert, alertEnabled, setAlertEnabled, setBedtimeAlert, setActiveTab }) {
+const lf=foodLog[0], ls=sleepLog[0], lm=medLog[0];
+const g=growthLog[growthLog.length-1], pg=growthLog[growthLog.length-2];
+return (
+<div>
+<div className=“card” style={{background:alertEnabled?“linear-gradient(135deg,#1565C0,#00ACC1)”:”#fff”,color:alertEnabled?”#fff”:”#1a2e4a”}}>
+<div style={{display:“flex”,justifyContent:“space-between”,alignItems:“center”,gap:8}}>
+<div style={{display:“flex”,alignItems:“center”,gap:10}}>
+<span style={{fontSize:26}}>🌙</span>
+<div>
+<div style={{fontWeight:800,fontSize:15}}>Schlafenszeit</div>
+<div style={{fontSize:12,opacity:.85}}>Erinnerung · {bedtimeAlert} Uhr</div>
+</div>
+</div>
+<div style={{display:“flex”,gap:7,alignItems:“center”}}>
+<input type=“time” value={bedtimeAlert} onChange={e=>setBedtimeAlert(e.target.value)} style={{background:“rgba(255,255,255,.2)”,border:“1px solid rgba(255,255,255,.3)”,borderRadius:8,color:alertEnabled?”#fff”:”#1a2e4a”,padding:“4px 7px”,fontSize:13,fontFamily:“Nunito”,fontWeight:700,outline:“none”}}/>
+<button onClick={()=>setAlertEnabled(!alertEnabled)} style={{background:alertEnabled?“rgba(255,255,255,.25)”:”#EEF5FF”,border:“none”,borderRadius:10,padding:“6px 11px”,color:alertEnabled?”#fff”:”#1E88E5”,fontFamily:“Nunito”,fontWeight:800,fontSize:12,cursor:“pointer”}}>
+{alertEnabled?“AN”:“AUS”}
+</button>
+</div>
+</div>
+</div>
+
+```
+  <div className="sec">Schnellzugriff</div>
+  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,margin:"0 14px"}}>
+    {[
+      {icon:"🍽",label:"Mahlzeiten",sub:lf?`Zuletzt vor ${Math.floor((Date.now()-lf.time)/60000)}min`:"Noch keine",color:"#E3F2FD",tab:1},
+      {icon:"😴",label:"Schlaf",    sub:ls?formatDuration(ls.end-ls.start):"Noch keiner",           color:"#EDE7F6",tab:2},
+      {icon:"💊",label:"Medizin",   sub:lm?lm.name:"Keines",                                         color:"#E8F5E9",tab:4},
+      {icon:"📏",label:"Wachstum",  sub:g?`${(g.weight/1000).toFixed(2)}kg`:"Nichts",               color:"#FFF8E1",tab:5},
+    ].map((x,i)=>(
+      <button key={i} onClick={()=>setActiveTab(x.tab)} style={{background:x.color,border:"none",borderRadius:18,padding:"15px 12px",cursor:"pointer",textAlign:"left",fontFamily:"Nunito"}}>
+        <div style={{fontSize:28,marginBottom:6}}>{x.icon}</div>
+        <div style={{fontWeight:800,fontSize:14,color:"#1a2e4a"}}>{x.label}</div>
+        <div style={{fontSize:11,color:"#607D8B",marginTop:2}}>{x.sub}</div>
+      </button>
+    ))}
+  </div>
+
+  <div className="sec">Letzte Aktivitäten</div>
+  <div className="card">
+    {[
+      ...foodLog.slice(0,3).map(f=>({icon:"🍼",text:`${f.type}${f.amount?` · ${f.amount}ml`:""}${f.slot?` (${f.slot})`:""}`,time:f.time,bg:"#E3F2FD"})),
+      ...sleepLog.slice(0,1).map(s=>({icon:"😴",text:`${formatDuration(s.end-s.start)} geschlafen`,time:s.end,bg:"#EDE7F6"})),
+      ...medLog.slice(0,1).map(m=>({icon:"💊",text:`${m.name} ${m.dose}`,time:m.time,bg:"#E8F5E9"})),
+    ].sort((a,b)=>b.time-a.time).slice(0,5).map((x,i)=>(
+      <div key={i} style={{display:"flex",gap:11,alignItems:"flex-start",padding:"10px 0",borderBottom:i<4?"1px solid #F0F7FF":"none"}}>
+        <div style={{width:38,height:38,borderRadius:11,background:x.bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>{x.icon}</div>
+        <div>
+          <div style={{fontWeight:700,fontSize:13}}>{x.text}</div>
+          <div style={{fontSize:11,color:"#90A4AE"}}>{formatDate(x.time)} · {formatTime(x.time)}</div>
+        </div>
+      </div>
+    ))}
+  </div>
+
+  {g&&pg&&(
+    <div className="card">
+      <div style={{fontWeight:800,fontSize:15,marginBottom:12}}>📈 Wachstum</div>
+      {[{l:"Gewicht",p:pg.weight,c:g.weight,u:"g",max:12000},{l:"Größe",p:pg.height,c:g.height,u:"cm",max:100}].map((x,i)=>(
+        <div key={i} style={{marginBottom:11}}>
+          <div style={{display:"flex",justifyContent:"space-between",fontSize:13}}>
+            <span style={{fontWeight:700}}>{x.l}</span>
+            <span style={{fontWeight:800,color:"#1E88E5"}}>{x.u==="g"?(x.c/1000).toFixed(2)+"kg":x.c+"cm"} <span style={{color:"#43A047",fontSize:11}}>+{x.c-x.p}{x.u}</span></span>
+          </div>
+          <div style={{background:"#E3F2FD",borderRadius:99,height:7,marginTop:5,overflow:"hidden"}}>
+            <div style={{height:"100%",borderRadius:99,background:"linear-gradient(90deg,#1565C0,#00ACC1)",width:`${(x.c/x.max)*100}%`}}/>
+          </div>
+        </div>
+      ))}
+    </div>
+  )}
+</div>
+```
+
+);
 }
 
-function calcMacros(){
-  const kg=parseFloat(document.getElementById('mc_kg').value);
-  const kfa=parseFloat(document.getElementById('mc_kfa').value)||15;
-  const act=parseFloat(document.getElementById('mc_act').value);
-  const goal=document.getElementById('mc_goal').value;
-  if(!kg){toast('Gewicht eingeben!');return;}
-  const lean=kg*(1-kfa/100);
-  const bmr=370+21.6*lean;
-  const tdee=bmr*act;
-  const delta=goal==='cut'?-300:goal==='bulk'?300:0;
-  const kcal=Math.round(tdee+delta);
-  const prot=Math.round(kg*2);
-  const fat=Math.round(kcal*.27/9);
-  const carbs=Math.round((kcal-prot*4-fat*9)/4);
-  document.getElementById('mc_kcal').textContent=kcal+' kcal';
-  document.getElementById('mc_sub').innerHTML=`Protein: <b>${prot}g</b> &nbsp; Fett: <b>${fat}g</b> &nbsp; Kohlenh.: <b>${carbs}g</b>`;
-  document.getElementById('mc_res').style.display='block';
+function MealTab({ mealPlan, foodLog, setFoodLog, openFoodForSlot, removeSlot, setEditingSlot, showAddSlot, setShowAddSlot, newSlotForm, setNewSlotForm, addNewSlot }) {
+const todayFood = foodLog.filter(f=>new Date(f.time).toDateString()===new Date().toDateString());
+const mlTotal   = todayFood.reduce((s,f)=>s+(f.amount?parseInt(f.amount)||0:0),0);
+
+return (
+<div>
+<div style={{display:“flex”,gap:10,margin:“12px 14px 4px”}}>
+<div style={{flex:1,background:”#E3F2FD”,borderRadius:16,padding:“12px 14px”}}>
+<div style={{fontSize:22,fontWeight:900,color:”#1565C0”}}>{todayFood.length}<span style={{fontSize:14}}>/{mealPlan.length}</span></div>
+<div style={{fontSize:11,color:”#1565C0”,fontWeight:700}}>Mahlzeiten heute</div>
+</div>
+<div style={{flex:1,background:”#E8F5E9”,borderRadius:16,padding:“12px 14px”}}>
+<div style={{fontSize:22,fontWeight:900,color:”#2E7D32”}}>{mlTotal}ml</div>
+<div style={{fontSize:11,color:”#2E7D32”,fontWeight:700}}>Flüssigkeit</div>
+</div>
+<div style={{flex:1,background:”#FFF8E1”,borderRadius:16,padding:“12px 14px”}}>
+<div style={{fontSize:22,fontWeight:900,color:”#E65100”}}>{mealPlan.length-todayFood.length}</div>
+<div style={{fontSize:11,color:”#E65100”,fontWeight:700}}>Noch offen</div>
+</div>
+</div>
+
+```
+  <div className="sec">Tagesplan ({mealPlan.length} Mahlzeiten)</div>
+
+  {mealPlan.map(slot=>{
+    const logged = foodLog.filter(f=>f.slot===slot.slot && new Date(f.time).toDateString()===new Date().toDateString());
+    const done   = logged.length > 0;
+    return (
+      <div key={slot.id} className="slot-card" style={{background:done?"#fff":slot.color,border:done?`2px solid ${slot.accent}`:"2px solid transparent"}}>
+        <div style={{width:48,height:48,borderRadius:15,background:done?slot.color:"rgba(255,255,255,.75)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,flexShrink:0}}>
+          {done?"✅":slot.icon}
+        </div>
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
+            <span style={{fontWeight:900,fontSize:15,color:"#1a2e4a"}}>{slot.slot}</span>
+            {done&&<span className="tag" style={{background:slot.color,color:slot.accent}}>✓ Eingetragen</span>}
+          </div>
+          <div style={{fontSize:12,color:"#90A4AE",fontWeight:700}}>{slot.time} Uhr</div>
+          {logged.map(l=>(
+            <div key={l.id} style={{display:"flex",alignItems:"center",gap:6,marginTop:5,flexWrap:"wrap"}}>
+              <span style={{fontSize:12,fontWeight:700,color:"#1565C0"}}>{l.type}{l.amount?` · ${l.amount}ml`:""}{l.duration?` · ${l.duration}min`:""}</span>
+              <button onClick={()=>setFoodLog(foodLog.filter(x=>x.id!==l.id))} style={{background:"#FEE2E2",border:"none",borderRadius:7,padding:"2px 8px",cursor:"pointer",fontSize:11,fontWeight:800,color:"#DC2626",fontFamily:"Nunito"}}>✕ Entfernen</button>
+            </div>
+          ))}
+        </div>
+        <div style={{display:"flex",flexDirection:"column",gap:6,alignItems:"flex-end",flexShrink:0}}>
+          <button onClick={()=>openFoodForSlot(slot)} style={{background:`${slot.accent}20`,border:`1.5px solid ${slot.accent}`,borderRadius:10,padding:"6px 10px",cursor:"pointer",fontSize:12,fontWeight:800,color:slot.accent,fontFamily:"Nunito",whiteSpace:"nowrap"}}>
+            + Eintragen
+          </button>
+          <div style={{display:"flex",gap:5}}>
+            <button onClick={()=>setEditingSlot({...slot})} style={{background:"#E3F2FD",border:"none",borderRadius:8,padding:"5px 7px",cursor:"pointer",fontSize:13}}>✏️</button>
+            <button onClick={()=>removeSlot(slot.id)} style={{background:"#FEE2E2",border:"none",borderRadius:8,padding:"5px 7px",cursor:"pointer",fontSize:13}}>🗑</button>
+          </div>
+        </div>
+      </div>
+    );
+  })}
+
+  <button onClick={()=>setShowAddSlot(true)} style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,width:"calc(100% - 28px)",margin:"4px 14px 14px",padding:"14px",background:"#EEF5FF",border:"2px dashed #90CAF9",borderRadius:18,cursor:"pointer",fontFamily:"Nunito",fontWeight:800,fontSize:14,color:"#1565C0"}}>
+    ＋ Neuen Slot hinzufügen
+  </button>
+
+  {foodLog.length>0&&(
+    <>
+      <div className="sec">Alle Einträge heute</div>
+      {todayFood.length===0&&<div style={{textAlign:"center",color:"#90A4AE",fontSize:13,padding:"20px 0"}}>Noch keine Einträge für heute</div>}
+      {todayFood.map(f=>{
+        const ft=FOOD_TYPES.find(x=>x.label===f.type)||{icon:"🍽",color:"#F3F4F6"};
+        return (
+          <div key={f.id} style={{background:"#fff",borderRadius:16,padding:"13px 14px",margin:"7px 14px",display:"flex",gap:11,alignItems:"center",boxShadow:"0 1px 8px rgba(33,150,243,.07)"}}>
+            <div style={{width:40,height:40,borderRadius:12,background:ft.color,display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>{ft.icon}</div>
+            <div style={{flex:1}}>
+              <div style={{fontWeight:800,fontSize:14}}>{f.type}{f.amount?` · ${f.amount}ml`:""}{f.duration?` · ${f.duration}min`:""}</div>
+              <div style={{fontSize:11,color:"#90A4AE"}}>{formatTime(f.time)}{f.slot?` · ${f.slot}`:""}</div>
+              {f.note&&<div style={{fontSize:11,color:"#B0BEC5"}}>📝 {f.note}</div>}
+            </div>
+            <button onClick={()=>setFoodLog(foodLog.filter(x=>x.id!==f.id))} style={{background:"#FEE2E2",border:"none",borderRadius:9,padding:"7px 9px",cursor:"pointer",fontSize:14,fontWeight:800,color:"#DC2626",fontFamily:"Nunito"}}>🗑</button>
+          </div>
+        );
+      })}
+    </>
+  )}
+
+  {showAddSlot&&(
+    <div className="overlay" onClick={()=>setShowAddSlot(false)}>
+      <div className="modal" onClick={e=>e.stopPropagation()}>
+        <div style={{fontSize:18,fontWeight:900,marginBottom:14}}>➕ Neuer Mahlzeit-Slot</div>
+        <div style={{display:"flex",flexDirection:"column",gap:10}}>
+          <input className="input" placeholder="Name (z.B. Spätmahlzeit)" value={newSlotForm.slot} onChange={e=>setNewSlotForm({...newSlotForm,slot:e.target.value})}/>
+          <input className="input" type="time" value={newSlotForm.time} onChange={e=>setNewSlotForm({...newSlotForm,time:e.target.value})}/>
+          <input className="input" placeholder="Emoji (z.B. 🥛 🍵 🌮)" value={newSlotForm.icon} onChange={e=>setNewSlotForm({...newSlotForm,icon:e.target.value})} maxLength={4}/>
+          <button className="btn-p" onClick={addNewSlot}>Hinzufügen ✓</button>
+        </div>
+      </div>
+    </div>
+  )}
+</div>
+```
+
+);
 }
 
-// ═══════════════════════════════════════════════════════════
-// BACKUP
-// ═══════════════════════════════════════════════════════════
-function exportBackup(){
-  const b=new Blob([JSON.stringify(D)],{type:'application/json'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(b);
-  a.download=`nephgymplan_${new Date().toISOString().substring(0,10)}.json`;
-  a.click();
-  toast('Backup exportiert ✓');
+function SleepTab({ sleepLog, setSleepLog, sleepActive, sleepElapsed, toggleSleep, bedtimeAlert, setBedtimeAlert, alertEnabled, setAlertEnabled, requestNotif }) {
+const avg=sleepLog.length>0?sleepLog.reduce((a,s)=>a+(s.end-s.start),0)/sleepLog.length:0;
+return (
+<div>
+<div className=“card” style={{background:sleepActive?“linear-gradient(135deg,#283593,#5C6BC0)”:”#fff”,color:sleepActive?”#fff”:”#1a2e4a”,textAlign:“center”,padding:28}}>
+<div style={{fontSize:52,marginBottom:8}}>{sleepActive?“😴”:“🌙”}</div>
+{sleepActive?(
+<>
+<div style={{fontSize:13,opacity:.85,fontWeight:600}}>Naim schläft seit</div>
+<div style={{fontSize:50,fontWeight:900,margin:“8px 0”}}>{formatDuration(sleepElapsed)}</div>
+<button onClick={toggleSleep} style={{background:“rgba(255,255,255,.22)”,border:“2px solid rgba(255,255,255,.4)”,color:”#fff”,borderRadius:16,padding:“12px 30px”,fontFamily:“Nunito”,fontWeight:800,fontSize:15,cursor:“pointer”}}>⏹ Beenden</button>
+</>
+):(
+<>
+<div style={{fontSize:14,fontWeight:700,color:”#90A4AE”,marginBottom:14}}>Naim schläft gerade nicht</div>
+<button onClick={toggleSleep} style={{background:“linear-gradient(135deg,#283593,#5C6BC0)”,border:“none”,color:”#fff”,borderRadius:16,padding:“14px 34px”,fontFamily:“Nunito”,fontWeight:800,fontSize:15,cursor:“pointer”,boxShadow:“0 4px 16px rgba(40,53,147,.35)”}}>
+▶️ Schlaf starten 😴
+</button>
+</>
+)}
+</div>
+<div className="card">
+<div style={{fontWeight:800,fontSize:15,marginBottom:12}}>🔔 Schlafenszeit-Erinnerung</div>
+<div style={{display:“flex”,alignItems:“center”,justifyContent:“space-between”}}>
+<div>
+<div style={{fontSize:12,color:”#90A4AE”}}>Tägl. Erinnerung</div>
+<input type=“time” value={bedtimeAlert} onChange={e=>setBedtimeAlert(e.target.value)} style={{border:“2px solid #DCEEFB”,borderRadius:10,padding:“6px 12px”,fontSize:18,fontFamily:“Nunito”,fontWeight:800,color:”#1565C0”,outline:“none”,marginTop:4}}/>
+</div>
+<button onClick={()=>{setAlertEnabled(!alertEnabled);if(!alertEnabled)requestNotif();}} style={{background:alertEnabled?”#1565C0”:”#F0F7FF”,color:alertEnabled?”#fff”:”#90A4AE”,border:“none”,borderRadius:12,padding:“9px 18px”,fontFamily:“Nunito”,fontWeight:800,cursor:“pointer”}}>
+{alertEnabled?“✓ AN”:“AUS”}
+</button>
+</div>
+<div style={{marginTop:12,padding:10,background:”#E3F2FD”,borderRadius:12,fontSize:12,color:”#1565C0”,fontWeight:600}}>
+💡 Babys (0–6 Mon.) brauchen 14–17h Schlaf täglich. Ideal: Schlafenszeit 19–20 Uhr.
+</div>
+</div>
+<div style={{display:“flex”,gap:10,margin:“0 14px”}}>
+{[{l:“Ø Schlaf”,v:formatDuration(avg),c:”#EDE7F6”},{l:“Einheiten”,v:sleepLog.length,c:”#E3F2FD”}].map((s,i)=>(
+<div key={i} style={{flex:1,background:s.c,borderRadius:16,padding:14}}>
+<div style={{fontSize:22,fontWeight:900}}>{s.v}</div>
+<div style={{fontSize:11,color:”#607D8B”,fontWeight:700,marginTop:2}}>{s.l}</div>
+</div>
+))}
+</div>
+<div className="sec">Schlafprotokoll</div>
+{sleepLog.map(s=>{
+const qc={gut:”#E8F5E9”,mittel:”#FFF8E1”,schlecht:”#FEE2E2”}[s.quality]||”#F3F4F6”;
+return (
+<div key={s.id} className=“card” style={{margin:“7px 14px”}}>
+<div style={{display:“flex”,gap:11,alignItems:“center”}}>
+<div style={{width:42,height:42,borderRadius:13,background:”#EDE7F6”,display:“flex”,alignItems:“center”,justifyContent:“center”,fontSize:21}}>😴</div>
+<div style={{flex:1}}>
+<div style={{fontWeight:800,fontSize:15}}>{formatDuration(s.end-s.start)}</div>
+<div style={{fontSize:11,color:”#90A4AE”}}>{formatTime(s.start)} – {formatTime(s.end)} · {formatDate(s.start)}</div>
+{s.note&&<div style={{fontSize:11,color:”#B0BEC5”}}>📝 {s.note}</div>}
+</div>
+<div style={{textAlign:“right”}}>
+<span className=“tag” style={{background:qc,color:”#555”}}>{s.quality}</span>
+<button onClick={()=>setSleepLog(sleepLog.filter(x=>x.id!==s.id))} style={{display:“block”,background:“none”,border:“none”,cursor:“pointer”,fontSize:14,marginTop:4}}>🗑</button>
+</div>
+</div>
+</div>
+);
+})}
+</div>
+);
 }
-function importBackup(){
-  const inp=document.createElement('input');
-  inp.type='file';inp.accept='.json';
-  inp.onchange=e=>{
-    const r=new FileReader();
-    r.onload=ev=>{try{D=JSON.parse(ev.target.result);save();init();toast('Backup importiert ✓');}catch{toast('Ungültige Datei!');}};
-    r.readAsText(e.target.files[0]);
-  };
-  inp.click();
-}
-function resetAll(){
-  if(!confirm('Alle Daten löschen?')) return;
-  localStorage.removeItem('nephGymV3');
-  location.reload();
-}
-</script>
 
-</body>
-</html>
+function PhotoTab({ photos, setPhotos, showPhotoForm, setShowPhotoForm, photoCaption, setPhotoCaption, selPhotoMonth, setSelPhotoMonth, fileRef, handlePhoto, photoPreview, addPhoto, babyBD }) {
+const getBM=(m)=>{const d=new Date(babyBD);d.setMonth(d.getMonth()+m-1);return`${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`;};
+return (
+<div>
+<div style={{padding:“10px 14px 2px”,fontSize:13,color:”#90A4AE”,fontWeight:600}}>{photos.filter(p=>p.url).length} Fotos · Naims Wachstum Monat 1–24 💙</div>
+<div style={{display:“grid”,gridTemplateColumns:“1fr 1fr”,gap:12,margin:“10px 14px”}}>
+{Array.from({length:24},(*,i)=>i+1).map(month=>{
+const photo=photos.find(p=>p.month===month);
+return (
+<div key={month} style={{background:”#fff”,borderRadius:18,overflow:“hidden”,boxShadow:“0 2px 12px rgba(33,150,243,.09)”}}>
+{photo?.url
+?<img src={photo.url} alt={`M${month}`} style={{width:“100%”,height:130,objectFit:“cover”}}/>
+:<div style={{background:`linear-gradient(135deg,${month%3===0?"#E3F2FD,#E8EAF6":month%3===1?"#E8F5E9,#E3F2FD":"#FFF8E1,#E3F2FD"})`,height:130,display:“flex”,flexDirection:“column”,alignItems:“center”,justifyContent:“center”,gap:5}}>
+<span style={{fontSize:32}}>📸</span>
+<span style={{fontSize:12,fontWeight:700,color:”#42A5F5”}}>Monat {month}</span>
+</div>
+}
+<div style={{padding:“9px 11px”}}>
+<div style={{fontWeight:800,fontSize:12,color:”#1565C0”}}>Monat {month}</div>
+<div style={{fontSize:10,color:”#B0BEC5”}}>{getBM(month)}</div>
+{photo?.caption&&<div style={{fontSize:10,color:”#78909C”,marginTop:2,lineHeight:1.4}}>{photo.caption}</div>}
+{!photo&&<button onClick={()=>{setSelPhotoMonth(month);setShowPhotoForm(true);}} style={{marginTop:6,background:”#E3F2FD”,border:“none”,borderRadius:8,padding:“4px 10px”,fontSize:10,fontFamily:“Nunito”,fontWeight:800,color:”#1565C0”,cursor:“pointer”}}>+ Foto</button>}
+</div>
+</div>
+);
+})}
+</div>
+<button className=“fab” onClick={()=>setShowPhotoForm(true)}>+</button>
+{showPhotoForm&&(
+<div className=“overlay” onClick={()=>setShowPhotoForm(false)}>
+<div className=“modal” onClick={e=>e.stopPropagation()}>
+<div style={{fontSize:18,fontWeight:900,marginBottom:14}}>📸 Foto hinzufügen</div>
+<select className=“input” value={selPhotoMonth} onChange={e=>setSelPhotoMonth(parseInt(e.target.value))} style={{marginBottom:10}}>
+{Array.from({length:24},(*,i)=>i+1).map(m=><option key={m} value={m}>Monat {m} – {getBM(m)}</option>)}
+</select>
+<div onClick={()=>fileRef.current?.click()} style={{background:photoPreview?“transparent”:”#E3F2FD”,borderRadius:14,height:photoPreview?“auto”:110,display:“flex”,alignItems:“center”,justifyContent:“center”,cursor:“pointer”,marginBottom:10,overflow:“hidden”,border:“2px dashed #90CAF9”}}>
+{photoPreview?<img src={photoPreview} style={{width:“100%”,maxHeight:190,objectFit:“cover”,borderRadius:12}}/>:<div style={{textAlign:“center”,color:”#42A5F5”}}><div style={{fontSize:34}}>📷</div><div style={{fontSize:12,fontWeight:700,marginTop:4}}>Foto auswählen</div></div>}
+</div>
+<input ref={fileRef} type=“file” accept=“image/*” style={{display:“none”}} onChange={handlePhoto}/>
+<input className=“input” placeholder=“Beschriftung ✨” value={photoCaption} onChange={e=>setPhotoCaption(e.target.value)} style={{marginBottom:14}}/>
+<button className="btn-p" onClick={addPhoto}>Speichern 📸</button>
+</div>
+</div>
+)}
+</div>
+);
+}
+
+function MedTab({ medLog, setMedLog, showMedForm, setShowMedForm, medForm, setMedForm, addMed }) {
+const rec=medLog.filter(m=>m.recurring), ot=medLog.filter(m=>!m.recurring);
+return (
+<div>
+<div style={{margin:“12px 14px 0”,padding:“10px 14px”,background:”#FFF8E1”,borderRadius:14,fontSize:12,color:”#E65100”,fontWeight:600}}>
+⚠️ Immer zuerst einen Arzt konsultieren. Diese App ersetzt keine medizinische Beratung.
+</div>
+{rec.length>0&&<><div className="sec">Dauermedikamente</div>
+{rec.map(m=>(
+<div key={m.id} className=“card” style={{margin:“7px 14px”}}>
+<div style={{display:“flex”,gap:11,alignItems:“center”}}>
+<div style={{width:42,height:42,borderRadius:13,background:”#E3F2FD”,display:“flex”,alignItems:“center”,justifyContent:“center”,fontSize:21}}>💊</div>
+<div style={{flex:1}}>
+<div style={{fontWeight:800,fontSize:15}}>{m.name}</div>
+<div style={{fontSize:12,color:”#1565C0”,fontWeight:700}}>{m.dose}</div>
+<div style={{fontSize:11,color:”#90A4AE”}}>🔄 {m.recurring} · {formatTime(m.time)}</div>
+{m.note&&<div style={{fontSize:11,color:”#B0BEC5”}}>📝 {m.note}</div>}
+</div>
+<button onClick={()=>setMedLog(medLog.filter(x=>x.id!==m.id))} style={{background:”#FEE2E2”,border:“none”,borderRadius:10,padding:“6px 8px”,cursor:“pointer”,fontSize:14}}>🗑</button>
+</div>
+</div>
+))}
+</>}
+<div className="sec">Alle Einträge</div>
+{ot.map(m=>(
+<div key={m.id} className=“card” style={{margin:“7px 14px”}}>
+<div style={{display:“flex”,gap:11,alignItems:“center”}}>
+<div style={{width:42,height:42,borderRadius:13,background:”#E8F5E9”,display:“flex”,alignItems:“center”,justifyContent:“center”,fontSize:21}}>💊</div>
+<div style={{flex:1}}>
+<div style={{fontWeight:800,fontSize:15}}>{m.name}</div>
+<div style={{fontSize:12,color:”#2E7D32”,fontWeight:700}}>{m.dose}</div>
+<div style={{fontSize:11,color:”#90A4AE”}}>{formatDate(m.time)} · {formatTime(m.time)}</div>
+{m.note&&<div style={{fontSize:11,color:”#B0BEC5”}}>📝 {m.note}</div>}
+</div>
+<button onClick={()=>setMedLog(medLog.filter(x=>x.id!==m.id))} style={{background:”#FEE2E2”,border:“none”,borderRadius:10,padding:“6px 8px”,cursor:“pointer”,fontSize:14}}>🗑</button>
+</div>
+</div>
+))}
+<button className=“fab” onClick={()=>setShowMedForm(true)}>+</button>
+{showMedForm&&(
+<div className=“overlay” onClick={()=>setShowMedForm(false)}>
+<div className=“modal” onClick={e=>e.stopPropagation()}>
+<div style={{fontSize:18,fontWeight:900,marginBottom:14}}>💊 Medikament eintragen</div>
+<div style={{display:“flex”,flexDirection:“column”,gap:10}}>
+<input className=“input” placeholder=“Name (z.B. Vitamin D)” value={medForm.name} onChange={e=>setMedForm({…medForm,name:e.target.value})}/>
+<input className=“input” placeholder=“Dosis (z.B. 500 IE, 2.5ml)” value={medForm.dose} onChange={e=>setMedForm({…medForm,dose:e.target.value})}/>
+<select className=“input” value={medForm.recurring} onChange={e=>setMedForm({…medForm,recurring:e.target.value})}>
+<option value="">Einmalig</option>
+<option value="täglich">Täglich</option>
+<option value="2x täglich">2x täglich</option>
+<option value="wöchentlich">Wöchentlich</option>
+<option value="bei Bedarf">Bei Bedarf</option>
+</select>
+<input className=“input” placeholder=“Notiz (z.B. Zahnen)” value={medForm.note} onChange={e=>setMedForm({…medForm,note:e.target.value})}/>
+<button className="btn-p" onClick={addMed}>Speichern 💊</button>
+</div>
+</div>
+</div>
+)}
+</div>
+);
+}
+
+function GrowthTab({ growthLog, setGrowthLog, showGrowthForm, setShowGrowthForm, growthForm, setGrowthForm, addGrowth }) {
+const latest=growthLog[growthLog.length-1];
+return (
+<div>
+{latest&&(
+<div style={{display:“grid”,gridTemplateColumns:“1fr 1fr 1fr”,gap:10,margin:“12px 14px 0”}}>
+{[{l:“Gewicht”,v:`${(latest.weight/1000).toFixed(2)}kg`,i:“⚖️”,c:”#E3F2FD”},{l:“Größe”,v:`${latest.height}cm`,i:“📏”,c:”#E8F5E9”},{l:“Kopf”,v:`${latest.headCirc}cm`,i:“🧠”,c:”#EDE7F6”}].map((s,i)=>(
+<div key={i} style={{background:s.c,borderRadius:16,padding:12,textAlign:“center”}}>
+<div style={{fontSize:22}}>{s.i}</div>
+<div style={{fontSize:16,fontWeight:900,marginTop:4}}>{s.v}</div>
+<div style={{fontSize:10,color:”#607D8B”,fontWeight:700}}>{s.l}</div>
+</div>
+))}
+</div>
+)}
+{growthLog.length>1&&(
+<div className="card">
+<div style={{fontWeight:800,fontSize:15,marginBottom:14}}>📈 Gewichtsverlauf</div>
+<div style={{display:“flex”,alignItems:“flex-end”,gap:6,height:100}}>
+{growthLog.map((g,i)=>{
+const mW=Math.max(…growthLog.map(x=>x.weight));
+return (
+<div key={g.id} style={{flex:1,display:“flex”,flexDirection:“column”,alignItems:“center”,gap:3}}>
+<div style={{fontSize:9,color:”#1565C0”,fontWeight:700}}>{(g.weight/1000).toFixed(1)}</div>
+<div style={{width:“100%”,borderRadius:“6px 6px 0 0”,background:“linear-gradient(to top,#1565C0,#90CAF9)”,height:`${(g.weight/mW)*100}%`,minHeight:4}}/>
+<div style={{fontSize:9,color:”#90A4AE”}}>M{i+1}</div>
+</div>
+);
+})}
+</div>
+</div>
+)}
+<div className="sec">Alle Messungen</div>
+{[…growthLog].reverse().map(g=>(
+<div key={g.id} className=“card” style={{margin:“7px 14px”}}>
+<div style={{display:“flex”,justifyContent:“space-between”,alignItems:“flex-start”}}>
+<div>
+<div style={{fontWeight:800,fontSize:15}}>{formatDate(g.date)}</div>
+{g.note&&<span className=“tag” style={{background:”#E3F2FD”,color:”#1565C0”,marginTop:4,display:“inline-block”}}>{g.note}</span>}
+<div style={{display:“flex”,gap:12,marginTop:8}}>
+{[{i:“⚖️”,v:`${(g.weight/1000).toFixed(2)}kg`},{i:“📏”,v:`${g.height}cm`},{i:“🧠”,v:`${g.headCirc}cm`}].map((x,i)=>(
+<div key={i} style={{fontSize:12,fontWeight:700,color:”#607D8B”}}>{x.i} {x.v}</div>
+))}
+</div>
+</div>
+<button onClick={()=>setGrowthLog(growthLog.filter(x=>x.id!==g.id))} style={{background:”#FEE2E2”,border:“none”,borderRadius:10,padding:“6px 8px”,cursor:“pointer”,fontSize:14}}>🗑</button>
+</div>
+</div>
+))}
+<button className=“fab” onClick={()=>setShowGrowthForm(true)}>+</button>
+{showGrowthForm&&(
+<div className=“overlay” onClick={()=>setShowGrowthForm(false)}>
+<div className=“modal” onClick={e=>e.stopPropagation()}>
+<div style={{fontSize:18,fontWeight:900,marginBottom:14}}>📏 Messung eintragen</div>
+<div style={{display:“flex”,flexDirection:“column”,gap:10}}>
+<input className=“input” type=“date” value={growthForm.date} onChange={e=>setGrowthForm({…growthForm,date:e.target.value})}/>
+<div style={{display:“grid”,gridTemplateColumns:“1fr 1fr 1fr”,gap:8}}>
+{[{l:“Gewicht (g)”,k:“weight”,p:“3400”},{l:“Größe (cm)”,k:“height”,p:“51”},{l:“Kopf (cm)”,k:“headCirc”,p:“34”}].map(x=>(
+<div key={x.k}>
+<label style={{fontSize:11,fontWeight:700,color:”#90A4AE”,display:“block”,marginBottom:3}}>{x.l}</label>
+<input className=“input” type=“number” placeholder={x.p} value={growthForm[x.k]} onChange={e=>setGrowthForm({…growthForm,[x.k]:e.target.value})}/>
+</div>
+))}
+</div>
+<input className=“input” placeholder=“Notiz (z.B. U2, 1 Monat)” value={growthForm.note} onChange={e=>setGrowthForm({…growthForm,note:e.target.value})}/>
+<button className="btn-p" onClick={addGrowth}>Speichern 📏</button>
+</div>
+</div>
+</div>
+)}
+</div>
+);
+}
